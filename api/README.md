@@ -13,6 +13,17 @@ ASTROLABIO_ENV=development uv run uvicorn astrolabio_api.main:app --reload      
 ASTROLABIO_ENV=development ASTROLABIO_SOURCE=example uv run uvicorn astrolabio_api.main:app --reload  # example galaxy, no cluster
 ```
 
+## Image
+
+`Dockerfile`: two stages on `python:3.13-slim`, base images pinned by digest.
+The build stage runs `uv sync --locked --no-dev --no-install-project`, so every
+dependency comes from `uv.lock` with its hash checked; the project is not built
+as a wheel (it runs from `/app/src` via `PYTHONPATH`), so nothing outside the lock
+is downloaded. Bytecode is compiled at build time because the root filesystem is
+read-only at runtime. It runs as UID 10001 and listens on port 8080. Inside the
+cluster it uses the mounted service account token, which `kubernetes_asyncio`
+re-reads as the kubelet rotates it.
+
 ## How the code is organized
 
 Data flows in one direction, and each layer only talks to the next one:
