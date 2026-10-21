@@ -75,7 +75,7 @@ Puede empezar en cuanto exista el contrato (E1.1).
 
 - [x] Cloudflare (verificado el 2026-10-21): *rate limiting* gratuito en `/api/galaxy` y `/ws` (30 peticiones en 10 s por IP, bloqueo de 10 s con 429; el plan gratuito solo permite filtrar por ruta), "Always Use HTTPS" (301) y HSTS de 6 meses con includeSubDomains. El WAF administrado se omitió: aporta poco a una app de solo lectura sin entradas de usuario.
 - [x] Revisión de seguridad completa contra las invariantes de `CLAUDE.md` (2026-10-21), verificada contra producción. **Bien:** sin docs ni esquema de FastAPI, solo GET (POST/PUT/DELETE/PATCH/OPTIONS → 405), sin CORS, CSP en la web, RBAC explícito sin secrets ni configmaps, solo la API con token, raíz de solo lectura y sin capabilities en ambos pods, nada de dev ni source maps en el build, sin secretos en el historial, y `find_leaks` limpio sobre la foto real. **Corregido:** cualquier ruta devolvía la página con 200 (ahora 404 real); la API no mandaba headers de seguridad (ahora `nosniff`, CSP `default-src 'none'`, `no-store`); cada `GET /api/galaxy` ensamblaba la galaxia (ahora sale de la caché del broadcaster: una ráfaga cuesta un ensamblado); un solo visitante podía ocupar los 200 lugares de `/ws` (ahora máx. 4 por IP según `CF-Connecting-IP`).
-- [ ] README del repo y nota de portafolio.
+- [x] README del repo (`README.md`, en español: qué es, qué se ve, cómo funciona, seguridad en capas, despliegue y desarrollo) y nota de portafolio (`docs/nota-portafolio.md`).
 
 ## E4 · Líneas de tráfico (fase 4)
 
