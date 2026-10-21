@@ -55,12 +55,14 @@ class Informer:
         *,
         max_backoff: float = 30.0,
         sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
+        on_change: Callable[[], None] = lambda: None,
     ) -> None:
         self.name = name
         self.synced = asyncio.Event()  # set after the first successful list
         self._source = source
         self._max_backoff = max_backoff
         self._sleep = sleep
+        self._on_change = on_change  # after every list and every applied change
         self._cache: dict[str, RawObject] = {}
         self._resource_version = ""
 
@@ -86,6 +88,7 @@ class Informer:
         self._cache = {object_key(obj): obj for obj in items}
         self._resource_version = resource_version
         self.synced.set()
+        self._on_change()
 
     async def _watch_until_gone(self) -> None:
         while True:
@@ -106,3 +109,4 @@ class Informer:
             self._cache.pop(key, None)
         else:
             self._cache[key] = event.object
+        self._on_change()

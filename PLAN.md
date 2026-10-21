@@ -60,13 +60,13 @@ Puede empezar en cuanto exista el contrato (E1.1).
 8. [ ] Rendimiento: medir fps; en dispositivos lentos, bajar automáticamente la calidad. **Hecho:** tres niveles (alto, bajo, mínimo: pixel ratio e intensidad del bloom, que nunca se apaga) y `QualityGovernor`, que baja un nivel tras 3 s seguidos bajo el mínimo del nivel (40 y 28 fps), sin volver a subir; el bloom se desliza al nuevo valor. **Falta:** probar en celular real, con la web desplegada (E2.9).
 9. [x] Conectar a `/api/galaxy` real (`useGalaxy`: reintenta mientras la API responde 503; en producción nunca cae al ejemplo). Imagen (`web/Dockerfile`, contexto la raíz del repo) con `nginx-unprivileged`, headers y CSP (`connect-src 'self' wss://astrolabio.fabiancienfuegos.com`), probada con el build de producción. Deployment ×2 sin token de SA, `/` → web en la `HTTPRoute` y entrada solo desde Traefik sobre el *default deny*. El CI construye, escanea, sube y hace el bump de las dos imágenes con `.github/scripts/bump-gitops.sh`.
 
-**Listo cuando:** se ve fluida en el celular y `k -n hola scale deploy hola --replicas=0` (y de regreso) se refleja al recargar. (Argo CD tiene `selfHeal` en `hola`: hay que pausar la sincronización automática para la prueba, o revierte el escalado en segundos.) **2026-10-21:** desplegada en `https://astrolabio.fabiancienfuegos.com` leyendo el clúster real, con la CSP y los headers en producción; visto bueno del sitio publicado. **Falta:** la prueba de escalar `hola` a 0 y de regreso. **Pendiente de look:** el proyecto CV queda detrás de la leyenda en el encuadre inicial.
+**Listo cuando:** se ve fluida en el celular y `k -n hola scale deploy hola --replicas=0` (y de regreso) se refleja al recargar. (Argo CD tiene `selfHeal` en `hola`: hay que pausar la sincronización automática para la prueba, o revierte el escalado en segundos.) **2026-10-21:** desplegada en `https://astrolabio.fabiancienfuegos.com` leyendo el clúster real, con la CSP y los headers en producción; visto bueno del sitio publicado. **Falta:** la prueba de escalar `hola` a 0 y de regreso. La leyenda empieza cerrada, así que ya no tapa a CV (ni a ningún proyecto que la rotación lleve a esa esquina).
 
 ## E3 · En vivo (fase 3)
 
 - [ ] Probar temprano que el WebSocket pasa por Gateway + Traefik + Cloudflare Tunnel.
-- [ ] `/ws`: la API empuja los deltas de los watchers (sanitizados con los mismos modelos).
-- [ ] Cliente: snapshot inicial + deltas aplicados directo a la escena; reconexión con nuevo snapshot.
+- [x] `/ws`: la API empuja la **galaxia completa** sanitizada (los mismos modelos que `GET /api/galaxy`) cada vez que cambia, agrupando los cambios en ventanas de 1 s y omitiendo los que no cambian nada (decidido el 2026-10-21: más simple y robusto que deltas por objeto, sin protocolo nuevo ni riesgo de desincronizarse; `live.py`, `routes/ws.py`). Solo el origen del sitio, máx. 200 clientes, mensajes entrantes descartados.
+- [ ] Cliente: galaxia inicial por `GET /api/galaxy` y luego `/ws`; la escena anima solo lo que cambió; reconexión con espera creciente (al reconectar llega la galaxia actual).
 - [ ] `metrics-server` por Helm; CPU por pod → brillo de la estrella.
 
 **Listo cuando:** un push a `hola` cambia su estrella en vivo, sin recargar, mientras Argo CD despliega.

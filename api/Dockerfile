@@ -35,4 +35,5 @@ COPY --from=build /app/.venv /app/.venv
 COPY --from=build /app/src /app/src
 USER 10001:10001
 EXPOSE 8080
-CMD ["uvicorn", "astrolabio_api.main:app", "--host", "0.0.0.0", "--port", "8080", "--no-server-header"]
+# Clients never send anything on /ws, so incoming messages are capped at 4 KB.
+CMD ["uvicorn", "astrolabio_api.main:app", "--host", "0.0.0.0", "--port", "8080", "--no-server-header", "--ws-max-size", "4096"]

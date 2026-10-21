@@ -5,11 +5,15 @@ place to see what can be configured.
 """
 
 import os
+import re
 from dataclasses import dataclass
 from typing import Literal
 
 Environment = Literal["production", "development"]
 Source = Literal["cluster", "example"]
+
+PUBLIC_ORIGIN = "https://astrolabio.fabiancienfuegos.com"
+_LOCAL_ORIGIN = re.compile(r"^http://(localhost|127\.0\.0\.1)(:\d+)?$")
 
 
 @dataclass(frozen=True)
@@ -23,6 +27,13 @@ class Settings:
     @property
     def is_development(self) -> bool:
         return self.environment == "development"
+
+    def allows_origin(self, origin: str | None) -> bool:
+        """Browsers send Origin on WebSockets: only the site itself may open `/ws`
+        (plus local dev servers in development)."""
+        if origin == PUBLIC_ORIGIN:
+            return True
+        return self.is_development and bool(origin) and _LOCAL_ORIGIN.match(origin) is not None
 
     @classmethod
     def from_env(cls) -> "Settings":

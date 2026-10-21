@@ -69,8 +69,11 @@ async def load_configuration() -> Configuration:
 class Cluster:
     def __init__(self, client: ApiClient) -> None:
         self._client = client
+        # Set by any informer on any change; `live.py` waits on it to push the galaxy.
+        self.changed = asyncio.Event()
         self.informers = {
-            r.key: Informer(r.key, ApiSource(r.list_function(client))) for r in RESOURCES
+            r.key: Informer(r.key, ApiSource(r.list_function(client)), on_change=self.changed.set)
+            for r in RESOURCES
         }
         self._tasks: list[asyncio.Task] = []
 

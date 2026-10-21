@@ -37,7 +37,7 @@ Kubernetes API ──► kube/ ──► assembly/ ──► contract/ ──►
 | Module | Responsibility | Status |
 | --- | --- | --- |
 | `main.py` | Builds the FastAPI app and plugs the routers in. No logic. | done |
-| `config.py` | Every environment variable the API reads (`ASTROLABIO_ENV`, `ASTROLABIO_SOURCE=cluster|example`). | done |
+| `config.py` | Every environment variable the API reads (`ASTROLABIO_ENV`, `ASTROLABIO_SOURCE=cluster\|example`) and the origins allowed on `/ws`. | done |
 | `contract/` | The public shape of the data. **Nothing leaves the API without passing through these models.** | done |
 | `contract/models.py` | Pydantic models of `GET /api/galaxy`, `extra="forbid"`, public-repo validators. | done |
 | `contract/example.py` | Example galaxy covering every state; web fixture and temporary data source. | done |
@@ -53,7 +53,8 @@ Kubernetes API ──► kube/ ──► assembly/ ──► contract/ ──►
 | `assembly/core.py` | Core: catalog components present in the cluster, with anonymous pods (`core/<id>/pod-<n>`) and services (selector match, or selectorless ones listed in the entry); nodes as generic suns counting published pods. | done |
 | `assembly/projects.py` | Visible namespaces as constellations: workloads, active replica sets, pods, services (targets by selector), routes (public hostnames only), Argo status. A namespace that does not fit the contract is skipped and logged. | done |
 | `assembly/health.py`, `annotations.py`, `nodes.py`, `raw.py` | Health rules; Spanish annotations to contract values (unknown → `None`); hostnames to generic node ids; safe readers of raw JSON. | done |
-| `routes/ws.py` | `/ws`: pushes deltas from the informers. | phase 3 |
+| `live.py` | `Broadcaster`: waits on the informers' `changed` event, batches changes (1 s), re-assembles and pushes the full `Galaxy` only when it changed (ignoring `generated_at`); one-slot queue per client (newest wins), at most 200 clients. | done |
+| `routes/ws.py` | `/ws`: the current galaxy on connect, then each change. Only the site's origin (plus localhost in development); client messages are discarded (capped at 4 KB by uvicorn). | done |
 
 Rules that keep the layers honest:
 

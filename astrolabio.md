@@ -298,7 +298,7 @@ Cada fase termina con algo publicado y un criterio claro de "listo".
 
 ### Fase 3: en vivo
 
-- WebSocket `/ws`: la API empuja cada cambio que reciben los watchers.
+- WebSocket `/ws`: la API empuja la galaxia completa (sanitizada, como `GET /api/galaxy`) cada vez que lo que reciben los watchers la cambia, como mucho una vez por segundo.
 - Instalar `metrics-server`; el brillo de cada estrella sigue a su CPU.
 
 **Listo cuando:** un push a `hola` hace que su estrella cambie de estado **en vivo**, sin recargar, mientras Argo CD despliega.

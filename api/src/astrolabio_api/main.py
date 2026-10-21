@@ -3,14 +3,19 @@
 uv run uvicorn astrolabio_api.main:app --reload
 """
 
+import asyncio
+import contextlib
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from .assembly import assemble_galaxy
 from .config import Settings
+from .contract.example import example_galaxy
 from .kube.cluster import Cluster
-from .routes import galaxy
+from .live import Broadcaster
+from .routes import galaxy, ws
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -25,9 +30,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         cluster = await Cluster.connect()
         cluster.start()
         app.state.cluster = cluster
+        app.state.broadcaster = Broadcaster(
+            lambda: assemble_galaxy(cluster.snapshot()) if cluster.synced else None,
+            cluster.changed,
+        )
+        live = asyncio.create_task(app.state.broadcaster.run(), name="live-galaxy")
         try:
             yield
         finally:
+            live.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await live
             await cluster.close()
 
     # The site is public: the schema and interactive docs only exist in development.
@@ -38,8 +51,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         openapi_url="/openapi.json" if settings.is_development else None,
         lifespan=lifespan,
     )
-    app.state.cluster = None  # None serves the example galaxy
+    app.state.settings = settings
+    # Without a cluster (ASTROLABIO_SOURCE=example) both endpoints serve the example,
+    # and /ws never pushes a change.
+    app.state.cluster = None
+    app.state.broadcaster = Broadcaster(example_galaxy, asyncio.Event())
     app.include_router(galaxy.router)
+    app.include_router(ws.router)
     return app
 
 
