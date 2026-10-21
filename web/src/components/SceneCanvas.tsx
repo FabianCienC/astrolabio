@@ -8,10 +8,12 @@ type Props = {
   selectedId: string | null;
   onSelect: (id: string | null) => void;
   onHover: (hover: Hover | null) => void;
+  /** The device can't create a WebGL context: the page falls back to the list view. */
+  onUnavailable: () => void;
 };
 
 /** Mounts the Three.js scene on a canvas. React only owns its lifecycle and the selection. */
-export function SceneCanvas({ galaxy, selectedId, onSelect, onHover }: Props) {
+export function SceneCanvas({ galaxy, selectedId, onSelect, onHover, onUnavailable }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<GalaxyScene | null>(null);
   // The scene keeps its callbacks for its whole life; these refs always point to the latest.
@@ -21,11 +23,18 @@ export function SceneCanvas({ galaxy, selectedId, onSelect, onHover }: Props) {
   onHoverRef.current = onHover;
 
   useEffect(() => {
-    const scene = new GalaxyScene(canvasRef.current!, {
-      reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-      onSelect: (id) => onSelectRef.current(id),
-      onHover: (hover) => onHoverRef.current(hover),
-    });
+    let scene: GalaxyScene;
+    try {
+      scene = new GalaxyScene(canvasRef.current!, {
+        reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+        onSelect: (id) => onSelectRef.current(id),
+        onHover: (hover) => onHoverRef.current(hover),
+      });
+    } catch {
+      // Three.js throws when the browser has no WebGL (disabled, blocklisted GPU...).
+      onUnavailable();
+      return;
+    }
     sceneRef.current = scene;
 
     // StrictMode mounts twice in dev: only attach the panel if this scene is still alive.

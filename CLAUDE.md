@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Current state
 
-This directory holds the design doc, `astrolabio.md` (in Spanish), which is the source of truth for scope, decisions and phases, and `PLAN.md`, the staged work plan (order and dependencies, no fixed dates). Read both before making changes. `api/` holds the API (contract done, informers next; see `api/README.md` for the module map); `web/` holds the 3D galaxy (visual spike stage); `anomalias/` doesn't exist yet.
+This directory holds the design doc, `astrolabio.md` (in Spanish), which is the source of truth for scope, decisions and phases, and `PLAN.md`, the staged work plan (order and dependencies, no fixed dates). Read both before making changes. `api/` holds the API (deployed; informers, assembly and catalog done; see `api/README.md` for the module map); `web/` holds the 3D galaxy (reads the real `/api/galaxy`; see `web/README.md`); `anomalias/` doesn't exist yet.
 
 ## Commands
 
@@ -23,7 +23,7 @@ Web (run from `web/`; see `web/README.md` for the module map):
 
 ```
 npm ci
-npm run dev                         # http://localhost:5173, dev tuning panel; ?quality=low forces low quality
+npm run dev                         # http://localhost:5173, dev tuning panel; ?quality=high|low|minimal forces a level; ?view=list opens the list
 npm run typecheck
 npm run build
 npm run gen:contract                # regenerate src/contract/galaxy.ts after re-exporting the contract
@@ -47,7 +47,7 @@ A public web app (`https://astrolabio.fabiancienfuegos.com`) that reads a homela
 - `web/`: `astrolabio-web`. Vite + **Three.js (WebGL), mandatory**. No SVG or 2D canvas for the main scene. **React + TypeScript** for the UI; the scene is a plain Three.js TS module (`web/src/scene/`, no React Three Fiber) mounted by a component. It is served by `nginx-unprivileged`.
 - `api/`: `astrolabio-api`. Python 3.13, FastAPI + `kubernetes_asyncio`, served by `uvicorn`. Tooling is **uv** (`pyproject.toml` + `uv.lock`; the lock's hashes satisfy "pinned by hash"). There is no system Python on the dev machine, so use `uv run` / `uv sync`, never bare `python` or `pip`. Everything runs on one asyncio event loop with no threads.
 - `anomalias/`: `astrolabio-anomalias` (phase 5). Python. It reads Prometheus, runs a z-score/STL check and notifies the API over HTTP. It also produces a Bedrock LLM summary built only from Events and state, never raw logs.
-- `.github/workflows/ci.yaml`: a `changes` job detects with `git diff` which folders changed (GitHub `paths` only filters whole workflows), and only those jobs run; pull requests only check. On a push to main it builds the image, scans it with Trivy and pushes it to `ghcr.io/fabiancienc/astrolabio-*`. It then bumps the tag in the separate `homelab-gitops` repo with `yq` (`select(.name == "astrolabio-api")).newTag = strenv(GITHUB_SHA)`) using the `GITOPS_DEPLOY_KEY` secret.
+- `.github/workflows/ci.yaml`: a `changes` job detects with `git diff` which folders changed (GitHub `paths` only filters whole workflows), and only those jobs run; pull requests only check. On a push to main it builds the image, scans it with Trivy and pushes it to `ghcr.io/fabiancienc/astrolabio-*`. It then bumps that image's tag in the separate `homelab-gitops` repo (`workloads/astrolabio/kustomization.yaml`) with `.github/scripts/bump-gitops.sh` (`yq`, by image name, rebase and retry if another job pushed first) using the `GITOPS_DEPLOY_KEY` secret. The web image is built from the repo root (`docker build -f web/Dockerfile .`).
 
 Kubernetes manifests do **not** live here. They go in `homelab-gitops` under `workloads/astrolabio/`, `platform/namespaces/` and `platform/rbac/`.
 

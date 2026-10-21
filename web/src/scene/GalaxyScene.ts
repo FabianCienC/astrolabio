@@ -17,7 +17,7 @@ import { SelectionHalo } from "./halo";
 import { layoutGalaxy, type PlacedObject } from "./layout";
 import { Nebulae } from "./nebulae";
 import { MIN_SIZE_PX, ObjectPoints, SIZE_SCALE } from "./objects";
-import { detectQuality, type Quality } from "./quality";
+import { detectQuality, forcedQuality, type Quality, QualityGovernor } from "./quality";
 import { RelationLines } from "./relations";
 import { BACKGROUND, KIND_COLORS, type ObjectKind } from "./symbology";
 
@@ -50,7 +50,7 @@ const PICK_SLOP_PX = 4;
 const CLICK_MAX_MOVE_PX = 5;
 
 export class GalaxyScene {
-  readonly quality: Quality;
+  quality: Quality;
   readonly renderer: WebGLRenderer;
   readonly camera: PerspectiveCamera;
   readonly rig: CameraRig;
@@ -77,13 +77,19 @@ export class GalaxyScene {
   private lastFrame = performance.now();
   private frames = 0;
   private fpsSince = performance.now();
+  /** Lowers quality while fps stays low; absent when `?quality=` forces a level. */
+  private readonly governor: QualityGovernor | null;
+  /** Bloom strength glides here after a quality change, instead of jumping. */
+  private bloomTarget: number | null = null;
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
     options: SceneOptions,
   ) {
     this.options = options;
-    this.quality = detectQuality();
+    const forced = forcedQuality();
+    this.quality = forced ?? detectQuality();
+    this.governor = forced ? null : new QualityGovernor(this.quality.level);
     const pixelRatio = Math.min(window.devicePixelRatio, this.quality.maxPixelRatio);
 
     this.renderer = new WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance" });
@@ -284,6 +290,12 @@ export class GalaxyScene {
     this.labels.setFocus(this.objects.focus);
     this.canvas.style.cursor = hovered >= 0 ? "pointer" : "";
 
+    if (this.bloomTarget !== null) {
+      const diff = this.bloomTarget - this.bloom.strength;
+      this.bloom.strength += diff * (1 - Math.exp(-delta * 2));
+      if (Math.abs(diff) < 0.002) this.bloomTarget = null;
+    }
+
     this.composer.render();
     this.labels.render(this.camera);
 
@@ -292,6 +304,21 @@ export class GalaxyScene {
       this.fps = Math.round((this.frames * 1000) / (nowMs - this.fpsSince));
       this.frames = 0;
       this.fpsSince = nowMs;
+      const lower = this.governor?.sample(this.fps, nowMs);
+      if (lower) this.applyQuality(lower);
     }
+  }
+
+  /** Switches to a lower quality: sharper or softer pixels at once, bloom gliding. */
+  private applyQuality(quality: Quality) {
+    this.quality = quality;
+    const pixelRatio = Math.min(window.devicePixelRatio, quality.maxPixelRatio);
+    this.renderer.setPixelRatio(pixelRatio);
+    this.composer.setPixelRatio(pixelRatio);
+    // Point sizes are in device pixels: keep shapes the same size on screen.
+    this.objects.material.uniforms.uPixelRatio!.value = pixelRatio;
+    this.halo.material.uniforms.uPixelRatio!.value = pixelRatio;
+    this.resize();
+    this.bloomTarget = quality.bloomStrength;
   }
 }

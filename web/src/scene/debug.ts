@@ -11,8 +11,11 @@ export function attachDebugPanel(scene: GalaxyScene) {
   const gui = new GUI({ title: "Astrolabio (dev)" });
   const stats = { fps: 0, quality: scene.quality.level };
   gui.add(stats, "fps").listen().disable();
-  gui.add(stats, "quality").disable();
-  const timer = setInterval(() => (stats.fps = scene.fps), 500);
+  gui.add(stats, "quality").listen().disable();
+  const timer = setInterval(() => {
+    stats.fps = scene.fps;
+    stats.quality = scene.quality.level;  // lowered live by the governor
+  }, 500);
 
   const bloom = gui.addFolder("Bloom");
   bloom.add(scene.bloom, "strength", 0, 3, 0.01);

@@ -28,7 +28,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       # GitHub's `paths` filters whole workflows, so changes are detected per folder here.
-      # The contract feeds both sides, so changing it checks both.
+      # The contract and the CI itself feed both sides, so changing them checks both.
       - id: diff
         env:
           BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
@@ -39,8 +39,8 @@ jobs:
             files=$(git diff --name-only "$BASE" "$GITHUB_SHA")
           fi
           changed() { printf '%s\n' "$files" | grep -qE "$1" && echo true || echo false; }
-          echo "api=$(changed '^(api|contract)/|^\.github/workflows/')" >> "$GITHUB_OUTPUT"
-          echo "web=$(changed '^(web|contract)/|^\.github/workflows/')" >> "$GITHUB_OUTPUT"
+          echo "api=$(changed '^(api|contract)/|^\.github/(workflows|scripts)/')" >> "$GITHUB_OUTPUT"
+          echo "web=$(changed '^(web|contract)/|^\.github/(workflows|scripts)/')" >> "$GITHUB_OUTPUT"
 
   api:
     needs: changes
@@ -98,28 +98,18 @@ jobs:
         working-directory: .
         env:
           DEPLOY_KEY: ${{ secrets.GITOPS_DEPLOY_KEY }}
-        run: |
-          install -m 700 -d ~/.ssh
-          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/gitops && chmod 600 ~/.ssh/gitops
-          echo "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl" >> ~/.ssh/known_hosts
-          export GIT_SSH_COMMAND="ssh -i ~/.ssh/gitops -o IdentitiesOnly=yes"
-          git clone --depth 1 git@github.com:FabianCienC/homelab-gitops.git gitops
-          cd gitops
-          file=workloads/astrolabio/kustomization.yaml
-          # Fails loudly if the image entry is missing, instead of silently not deploying.
-          yq -e '.images[] | select(.name == "astrolabio-api")' "$file" > /dev/null
-          yq -i '(.images[] | select(.name == "astrolabio-api")).newTag = strenv(GITHUB_SHA)' "$file"
-          if git diff --quiet; then echo "already at ${GITHUB_SHA::7}"; exit 0; fi  # a re-run
-          git config user.name "astrolabio-ci"
-          git config user.email "astrolabio-ci@users.noreply.github.com"
-          git commit -am "astrolabio-api: imagen ${GITHUB_SHA::7}"
-          # Another app's CI may have pushed meanwhile: rebase and retry once.
-          git push || { git pull --rebase && git push; }
+          IMAGE_NAME: astrolabio-api
+        run: bash .github/scripts/bump-gitops.sh
 
   web:
     needs: changes
     if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ghcr.io/fabiancienc/astrolabio-web
     defaults:
       run:
         working-directory: web
@@ -134,10 +124,42 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
 
-      # Image, Trivy and the gitops bump arrive with the web Dockerfile (PLAN E2.9).
       - name: Tipos y build
         run: |
           npm ci
           npm run gen:contract
           git diff --exit-code src/contract/  # the TS types match the committed schema
           npm run build
+
+      # The context is the repo root: the build reads the contract from ../contract.
+      - name: Construir imagen
+        working-directory: .
+        run: docker build -f web/Dockerfile -t "$IMAGE:$GITHUB_SHA" .
+
+      - name: Escanear con Trivy
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE }}:${{ github.sha }}
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: Login a GHCR
+        if: github.event_name == 'push'
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Subir imagen
+        if: github.event_name == 'push'
+        run: docker push "$IMAGE:$GITHUB_SHA"
+
+      - name: Actualizar el tag en homelab-gitops
+        if: github.event_name == 'push'
+        working-directory: .
+        env:
+          DEPLOY_KEY: ${{ secrets.GITOPS_DEPLOY_KEY }}
+          IMAGE_NAME: astrolabio-web
+        run: bash .github/scripts/bump-gitops.sh
