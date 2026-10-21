@@ -21,6 +21,7 @@ from kubernetes_asyncio.client import (
 )
 
 from .informer import Informer, RawObject
+from .metrics import MetricsPoller
 from .source import ApiSource, ListFunction
 
 
@@ -55,6 +56,9 @@ RESOURCES = (
     Resource("applications", _custom("argoproj.io", "v1alpha1", "applications", "argocd")),
 )
 
+# Snapshot keys filled by the metrics poller (polled, not watched; empty without metrics-server).
+METRICS_KEYS = ("podmetrics", "nodemetrics")
+
 
 async def load_configuration() -> Configuration:
     """In-cluster service account token when running in a pod, kubeconfig otherwise."""
@@ -75,6 +79,13 @@ class Cluster:
             r.key: Informer(r.key, ApiSource(r.list_function(client)), on_change=self.changed.set)
             for r in RESOURCES
         }
+        # CPU and memory (metrics-server): polled, and optional.
+        metrics = CustomObjectsApi(client)
+        self.metrics = MetricsPoller(
+            partial(metrics.list_cluster_custom_object, "metrics.k8s.io", "v1beta1", "pods"),
+            partial(metrics.list_cluster_custom_object, "metrics.k8s.io", "v1beta1", "nodes"),
+            on_change=self.changed.set,
+        )
         self._tasks: list[asyncio.Task] = []
 
     @classmethod
@@ -85,7 +96,7 @@ class Cluster:
         self._tasks = [
             asyncio.create_task(informer.run(), name=f"informer-{key}")
             for key, informer in self.informers.items()
-        ]
+        ] + [asyncio.create_task(self.metrics.run(), name="metrics")]
 
     @property
     def synced(self) -> bool:
@@ -96,7 +107,10 @@ class Cluster:
         await asyncio.gather(*(i.synced.wait() for i in self.informers.values()))
 
     def snapshot(self) -> dict[str, list[RawObject]]:
-        return {key: informer.items() for key, informer in self.informers.items()}
+        return {
+            **{key: informer.items() for key, informer in self.informers.items()},
+            **{key: self.metrics.items(key) for key in METRICS_KEYS},
+        }
 
     async def close(self) -> None:
         for task in self._tasks:

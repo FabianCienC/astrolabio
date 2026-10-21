@@ -342,4 +342,28 @@ def poisoned_cluster() -> dict[str, list[dict]]:
                 ),
             }
         ],
+        # metrics-server: matched by name, only the usage numbers are published.
+        "podmetrics": [
+            {
+                "metadata": _meta("cv-7d9f8b6c5-abcde", "cv"),
+                "timestamp": "2026-10-21T18:00:00Z",
+                "window": "15.123s",
+                "containers": [{"name": "cv", "usage": {"cpu": "3141592n", "memory": "12288Ki"}}],
+            },
+            {
+                "metadata": _meta("coredns-668d6bf9bc-x7k2p", "kube-system"),
+                "window": "15.123s",
+                "containers": [
+                    {"name": "coredns", "usage": {"cpu": "2m", "memory": "20Mi"}},
+                    {"name": "debug-shell", "usage": {"cpu": "1m", "memory": "4Mi"}},
+                ],
+            },
+        ],
+        "nodemetrics": [
+            {
+                "metadata": _meta("k8s-cp-01", labels={"kubernetes.io/hostname": "k8s-cp-01"}),
+                "window": "20.0s",
+                "usage": {"cpu": "412000000n", "memory": "2097152Ki"},
+            },
+        ],
     }

@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 
 from astrolabio_api.config import Settings
 from astrolabio_api.contract.models import Galaxy
-from astrolabio_api.kube.cluster import RESOURCES
+from astrolabio_api.kube.cluster import METRICS_KEYS, RESOURCES
 from astrolabio_api.main import create_app
 
 PRODUCTION = Settings(environment="production", source="example")
@@ -34,7 +34,7 @@ class FakeCluster:
         self.synced = synced
 
     def snapshot(self) -> dict:
-        snapshot = {r.key: [] for r in RESOURCES}
+        snapshot = {key: [] for key in [*(r.key for r in RESOURCES), *METRICS_KEYS]}
         snapshot["namespaces"] = [
             {"metadata": {"name": "hola", "labels": {"fabiancienfuegos.com/astrolabio": "visible"}}}
         ]

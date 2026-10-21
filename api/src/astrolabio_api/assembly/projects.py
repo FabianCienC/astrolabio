@@ -19,6 +19,7 @@ from ..contract.models import (
     Commit,
     Constellation,
     Health,
+    Metrics,
     NodeId,
     Pod,
     PodPhase,
@@ -32,6 +33,7 @@ from ..contract.models import (
 )
 from . import annotations as ann
 from .health import pod_health, ready_health, replicas_health, worst
+from .metrics import PodKey, pod_key, pod_metrics, total
 from .raw import (
     RawObject,
     Snapshot,
@@ -58,11 +60,12 @@ _ARGO_HEALTH: set[ArgoHealth] = {
 
 def build_constellations(snapshot: Snapshot, node_ids: dict[str, NodeId]) -> list[Constellation]:
     constellations = []
+    usage = pod_metrics(snapshot)
     for namespace in sorted(snapshot["namespaces"], key=name):
         if labels(namespace).get(ann.VISIBLE_LABEL) != "visible":
             continue
         try:
-            constellations.append(_Project(snapshot, namespace, node_ids).build())
+            constellations.append(_Project(snapshot, namespace, node_ids, usage).build())
         except ValidationError:
             log.exception("skipping namespace %s: it does not fit the contract", name(namespace))
     return constellations
@@ -88,7 +91,13 @@ def pod_ready(raw: RawObject) -> bool:
     )
 
 
-def build_pod(raw: RawObject, id: str, pod_name: str | None, node_ids: dict[str, NodeId]) -> Pod:
+def build_pod(
+    raw: RawObject,
+    id: str,
+    pod_name: str | None,
+    node_ids: dict[str, NodeId],
+    metrics: Metrics | None = None,
+) -> Pod:
     pod_status = status(raw)
     phase = pod_status.get("phase")
     phase = phase if phase in _POD_PHASES else "Unknown"
@@ -101,6 +110,7 @@ def build_pod(raw: RawObject, id: str, pod_name: str | None, node_ids: dict[str,
         restarts=sum(c.get("restartCount", 0) for c in pod_status.get("containerStatuses") or []),
         node=node_ids.get(spec(raw).get("nodeName", "")),
         health=pod_health(phase, ready),
+        metrics=metrics or Metrics(),
     )
 
 
@@ -120,8 +130,15 @@ class _Published:
 
 
 class _Project:
-    def __init__(self, snapshot: Snapshot, namespace: RawObject, node_ids: dict[str, NodeId]):
+    def __init__(
+        self,
+        snapshot: Snapshot,
+        namespace: RawObject,
+        node_ids: dict[str, NodeId],
+        usage: dict[PodKey, Metrics],
+    ):
         self.ns = name(namespace)
+        self.usage = usage
         self.namespace = namespace
         self.snapshot = snapshot
         self.node_ids = node_ids
@@ -162,7 +179,13 @@ class _Project:
     def _pods(self, owner_kind: str, owner_name: str) -> list[Pod]:
         pods = []
         for raw in self.pods_by_owner.get((owner_kind, owner_name), []):
-            pod = build_pod(raw, self._id("pod", name(raw)), name(raw), self.node_ids)
+            pod = build_pod(
+                raw,
+                self._id("pod", name(raw)),
+                name(raw),
+                self.node_ids,
+                self.usage.get(pod_key(raw)),
+            )
             self.published.append(_Published(pod, labels(raw)))
             pods.append(pod)
         return pods
@@ -171,6 +194,8 @@ class _Project:
         notes = annotations(raw)
         replicas = workload_replicas(kind, raw)
         is_deployment = kind == "Deployment"
+        replica_sets = self._replica_sets(name(raw)) if is_deployment else []
+        pods = [] if is_deployment else self._pods(kind, name(raw))
         return Workload(
             id=self._id(kind.lower(), name(raw)),
             name=name(raw),
@@ -181,8 +206,9 @@ class _Project:
             replicas=replicas,
             health=replicas_health(replicas),
             commit=self._commit(raw),
-            replica_sets=self._replica_sets(name(raw)) if is_deployment else [],
-            pods=[] if is_deployment else self._pods(kind, name(raw)),
+            metrics=total(p.metrics for p in [*pods, *(p for rs in replica_sets for p in rs.pods)]),
+            replica_sets=replica_sets,
+            pods=pods,
         )
 
     def _replica_sets(self, deployment: str) -> list[ReplicaSet]:

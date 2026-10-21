@@ -14,7 +14,7 @@ from poisoned_cluster import SECRETS, SHA, poisoned_cluster
 
 from astrolabio_api.assembly import assemble_galaxy
 from astrolabio_api.config import Settings
-from astrolabio_api.kube.cluster import RESOURCES
+from astrolabio_api.kube.cluster import METRICS_KEYS, RESOURCES
 from astrolabio_api.main import create_app
 
 # Keys of raw Kubernetes objects, or of data the contract never carries.
@@ -82,6 +82,19 @@ def test_assembled_galaxy_has_no_leaks():
     assert cv.workloads[0].criticality is None  # unknown annotation value
     assert cv.workloads[0].commit and cv.workloads[0].commit.sha == SHA
     assert [p.name for p in cv.workloads[0].all_pods()] == ["cv-7d9f8b6c5-abcde"]
+    # Metrics arrive as numbers only: 3141592n -> 3 millicores, 12288Ki -> 12 MiB.
+    (pod,) = cv.workloads[0].all_pods()
+    assert (pod.metrics.cpu_millicores, pod.metrics.memory_mib) == (3, 12)
+    assert cv.workloads[0].metrics == pod.metrics
+
+
+def test_metrics_reach_components_and_nodes():
+    core = assemble_galaxy(poisoned_cluster()).core
+    coredns = next(c for c in core.components if c.id == "coredns")
+    assert (coredns.metrics.cpu_millicores, coredns.metrics.memory_mib) == (3, 24)
+    nodes = {n.id: n.metrics for n in core.nodes}
+    assert (nodes["control-plane"].cpu_millicores, nodes["control-plane"].memory_mib) == (412, 2048)
+    assert nodes["worker-1"].cpu_millicores is None  # no sample: no number, never a guess
 
 
 def test_core_publishes_only_catalog_components():
@@ -101,4 +114,4 @@ def test_core_publishes_only_catalog_components():
 
 def test_poisoned_cluster_has_every_watched_resource():
     # The keys are the contract between kube/ and assembly/.
-    assert set(poisoned_cluster()) == {r.key for r in RESOURCES}
+    assert set(poisoned_cluster()) == {*(r.key for r in RESOURCES), *METRICS_KEYS}

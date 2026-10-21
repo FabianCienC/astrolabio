@@ -47,11 +47,13 @@ Kubernetes API ──► kube/ ──► assembly/ ──► contract/ ──►
 | `kube/` | Informers: one `list` + `watch` per resource, in-memory cache, re-list on `410 Gone`. Caches raw API JSON as dicts. | done |
 | `kube/informer.py` | Generic informer over a `Source` (list + watch, raises `Gone` on 410); backoff on errors. Tested with a fake source. | done |
 | `kube/source.py` | `Source` over kubernetes_asyncio: raw JSON (`_preload_content=False`), lines split by hand, 410 (status or `ERROR` event) → `Gone`, drops `managedFields` and `last-applied-configuration`. | done |
-| `kube/cluster.py` | `RESOURCES` (one informer each, matching the `astrolabio-reader` ClusterRole), config in-cluster or kubeconfig, `snapshot()` for `assembly/`. | done |
+| `kube/cluster.py` | `RESOURCES` (one informer each, matching the `astrolabio-reader` ClusterRole), config in-cluster or kubeconfig, `snapshot()` for `assembly/`. | done Also runs the metrics poller (`METRICS_KEYS` in the snapshot). |
+| `kube/metrics.py` | `MetricsPoller`: lists `metrics.k8s.io` pods and nodes every 15 s (no watch exists); signals a change only when the numbers change; without metrics-server the galaxy simply has no metrics. |
 | `assembly/` | Turns the cache into a `Galaxy`: annotations, commit from the image tag, Argo status, visible namespaces, infra catalog. Pure; reads only allowlisted fields. | done |
 | `assembly/catalog.py` | Closed catalog: one entry per platform workload (namespace, kind, name; static pods by their `component` label), with name, purpose, `system` and Argo CD Application. A test keeps it equal to the example snapshot. | done |
 | `assembly/core.py` | Core: catalog components present in the cluster, with anonymous pods (`core/<id>/pod-<n>`) and services (selector match, or selectorless ones listed in the entry); nodes as generic suns counting published pods. | done |
 | `assembly/projects.py` | Visible namespaces as constellations: workloads, active replica sets, pods, services (targets by selector), routes (public hostnames only), Argo status. A namespace that does not fit the contract is skipped and logged. | done |
+| `assembly/metrics.py` | metrics-server quantities (`n`, `u`, `m`, `Ki`, `Mi`...) to millicores and MiB; per pod, summed per workload and component, per generic node. |
 | `assembly/health.py`, `annotations.py`, `nodes.py`, `raw.py` | Health rules; Spanish annotations to contract values (unknown → `None`); hostnames to generic node ids; safe readers of raw JSON. | done |
 | `live.py` | `Broadcaster`: waits on the informers' `changed` event, batches changes (1 s), re-assembles and pushes the full `Galaxy` only when it changed (ignoring `generated_at`); one-slot queue per client (newest wins), at most 200 clients. | done |
 | `routes/ws.py` | `/ws`: the current galaxy on connect, then each change. Only the site's origin (plus localhost in development); client messages are discarded (capped at 4 KB by uvicorn). | done |
