@@ -28,19 +28,28 @@ export function App() {
       </div>
     );
   }
-  return <GalaxyView galaxy={state.galaxy} example={state.example} live={state.live} />;
+  return (
+    <GalaxyView
+      galaxy={state.galaxy}
+      example={state.example}
+      live={state.live}
+      reconnecting={state.reconnecting}
+    />
+  );
 }
 
-/** `live`: whether `/ws` is connected. Undefined before there is a galaxy at all. */
-function Title({ live }: { live?: boolean }) {
+type LiveState = { live: boolean; reconnecting: boolean };
+
+/** `stream`: the /ws state; undefined before there is a galaxy (or with the dev example). */
+function Title({ stream }: { stream?: LiveState }) {
   return (
     <h1 className="title">
       Astrolabio
       <small>
         el homelab, en vivo
-        {live !== undefined && (
-          <span className={`live-dot${live ? " live-dot-on" : ""}`} role="status">
-            {live ? "conectado" : "reconectando…"}
+        {stream && (
+          <span className={`live-dot${stream.live ? " live-dot-on" : ""}`} role="status">
+            {stream.live ? "conectado" : stream.reconnecting ? "reconectando…" : "conectando…"}
           </span>
         )}
       </small>
@@ -48,9 +57,9 @@ function Title({ live }: { live?: boolean }) {
   );
 }
 
-type GalaxyViewProps = { galaxy: Galaxy; example: boolean; live: boolean };
+type GalaxyViewProps = { galaxy: Galaxy; example: boolean } & LiveState;
 
-function GalaxyView({ galaxy, example, live }: GalaxyViewProps) {
+function GalaxyView({ galaxy, example, live, reconnecting }: GalaxyViewProps) {
   const index = useMemo(() => new GalaxyIndex(galaxy), [galaxy]);
   const activity = useActivity(galaxy, live, example);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -79,7 +88,7 @@ function GalaxyView({ galaxy, example, live }: GalaxyViewProps) {
           onUnavailable={() => setWebgl(false)}
         />
         {!showList && <HoverCard index={index} hover={hover} />}
-        <Title live={example ? undefined : live} />
+        <Title stream={example ? undefined : { live, reconnecting }} />
         {example && <p className="example-notice">Datos de ejemplo: no hay API local</p>}
         {webgl && (
           <button

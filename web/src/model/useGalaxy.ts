@@ -4,7 +4,15 @@ import type { Galaxy } from "../contract/galaxy";
 
 export type GalaxyState =
   | { status: "loading"; galaxy: null }
-  | { status: "ready"; galaxy: Galaxy; example: boolean; live: boolean }
+  | {
+      status: "ready";
+      galaxy: Galaxy;
+      example: boolean;
+      /** /ws is connected and delivering. */
+      live: boolean;
+      /** It was live and dropped: reconnecting (as opposed to connecting the first time). */
+      reconnecting: boolean;
+    }
   | { status: "error"; galaxy: null };
 
 /** While the API's informers sync it answers 503; it is worth waiting a little. */
@@ -29,8 +37,9 @@ export function useGalaxy(): GalaxyState {
     let socket: WebSocket | null = null;
     let reconnectMs = RECONNECT_MIN_MS;
 
-    const setLive = (live: boolean) =>
-      setState((s) => (s.status === "ready" && s.live !== live ? { ...s, live } : s));
+    let delivered = false; // a first message came: later drops are reconnections
+    const dropped = () =>
+      setState((s) => (s.status === "ready" ? { ...s, live: false, reconnecting: delivered } : s));
 
     const connect = () => {
       if (controller.signal.aborted) return;
@@ -39,10 +48,11 @@ export function useGalaxy(): GalaxyState {
       socket.onmessage = (event: MessageEvent<string>) => {
         reconnectMs = RECONNECT_MIN_MS;
         const galaxy = JSON.parse(event.data) as Galaxy;
-        setState({ status: "ready", galaxy, example: false, live: true });
+        delivered = true;
+        setState({ status: "ready", galaxy, example: false, live: true, reconnecting: false });
       };
       socket.onclose = () => {
-        setLive(false);
+        dropped();
         if (controller.signal.aborted) return;
         timer = window.setTimeout(connect, reconnectMs);
         reconnectMs = Math.min(reconnectMs * 2, RECONNECT_MAX_MS);
@@ -58,13 +68,19 @@ export function useGalaxy(): GalaxyState {
         }
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const galaxy = (await response.json()) as Galaxy;
-        setState({ status: "ready", galaxy, example: false, live: false });
+        setState({ status: "ready", galaxy, example: false, live: false, reconnecting: false });
         connect();
       } catch (error) {
         if (controller.signal.aborted) return;
         if (import.meta.env.DEV) {
           const { exampleGalaxy } = await import("../contract/fixture");
-          setState({ status: "ready", galaxy: exampleGalaxy, example: true, live: false });
+          setState({
+            status: "ready",
+            galaxy: exampleGalaxy,
+            example: true,
+            live: false,
+            reconnecting: false,
+          });
           return;
         }
         console.error("could not load /api/galaxy", error);
