@@ -41,7 +41,10 @@ class ApiSource:
             body = json.loads(await response.read())
         finally:
             response.release()
-        return [_trim(obj) for obj in body["items"]], body["metadata"]["resourceVersion"]
+        # Aggregated APIs such as metrics.k8s.io are not stored in etcd and may send no
+        # resourceVersion; "" then means "watch from now", like the API server's own default.
+        version = (body.get("metadata") or {}).get("resourceVersion", "")
+        return [_trim(obj) for obj in body["items"]], version
 
     async def watch(self, resource_version: str) -> AsyncIterator[WatchEvent]:
         response = await self._list(

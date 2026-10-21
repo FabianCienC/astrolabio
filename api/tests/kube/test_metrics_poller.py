@@ -13,7 +13,8 @@ class Response:
     def __init__(self, items: list[dict], status: int = 200) -> None:
         self.status = status
         self.reason = "OK"
-        self.body = json.dumps({"metadata": {"resourceVersion": ""}, "items": items}).encode()
+        # Like metrics-server: aggregated lists carry no resourceVersion.
+        self.body = json.dumps({"kind": "PodMetricsList", "metadata": {}, "items": items}).encode()
 
     async def read(self) -> bytes:
         return self.body

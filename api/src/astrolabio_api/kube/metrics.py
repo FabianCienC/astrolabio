@@ -44,10 +44,12 @@ class MetricsPoller:
     async def poll(self) -> None:
         try:
             fresh = {key: (await ApiSource(fn).list())[0] for key, fn in self._lists.items()}
-        except Exception:
+        except Exception as error:
             # Log the first failure of a streak, not one every 15 s.
             if not self._failing:
-                log.warning("metrics-server unavailable; the galaxy goes without metrics")
+                log.warning(
+                    "metrics-server unavailable (%r); the galaxy goes without metrics", error
+                )
             self._failing = True
             return
         if self._failing:
