@@ -6,7 +6,7 @@ Programa de etapas para construir Astrolabio. El alcance, las decisiones y los c
 
 ## Idea central: contrato primero
 
-Lo primero de la etapa 1 es fijar el **esquema de `GET /api/galaxia`** (modelos Pydantic) y guardar un JSON de ejemplo en `web/src/fixtures/galaxia.json`. Con eso el frontend 3D avanza contra datos falsos sin esperar a que la API esté desplegada, y las etapas 1 y 2 pueden traslaparse.
+Lo primero de la etapa 1 es fijar el **esquema de `GET /api/galaxia`** (modelos Pydantic) y exportarlo a `contrato/` en la raíz del repo: `galaxia.schema.json` (JSON Schema, del que el frontend genera sus tipos) y `galaxia.ejemplo.json` (fixture). Con eso el frontend 3D avanza contra datos falsos sin esperar a que la API esté desplegada, y las etapas 1 y 2 pueden traslaparse.
 
 ```
 E0 ──► E1.1 contrato ──┬──► resto de E1 (API) ──┐
@@ -23,17 +23,17 @@ E0 ──► E1.1 contrato ──┬──► resto de E1 (API) ──┐
 
 - [x] Rama principal `main` y remoto `FabianCienC/astrolabio` (público).
 - [x] Deploy key `astrolabio-ci` (escritura) en `homelab-gitops`; su privada como secreto `GITOPS_DEPLOY_KEY`.
-- [ ] `homelab-gitops`: `platform/namespaces/astrolabio.yaml` (PSA `restricted`, `gateway-access: public`, etiqueta visible).
-- [ ] `homelab-gitops`: `platform/rbac/astrolabio-reader.yaml` + `apps/rbac.yaml`.
-- [ ] `homelab-gitops`: namespace `astrolabio` y kind `ServiceAccount` en el `AppProject portfolio`; `apps/astrolabio.yaml`.
-- [ ] Anotaciones `fabiancienfuegos.com/*` en los namespaces y deployments de `hola` y `cv`.
+- [x] `homelab-gitops`: `platform/namespaces/astrolabio.yaml` (PSA `restricted`, `gateway-access: public`, etiqueta visible).
+- [x] `homelab-gitops`: `platform/rbac/astrolabio-reader.yaml` + `apps/rbac.yaml`.
+- [x] `homelab-gitops`: namespace `astrolabio` y kind `ServiceAccount` en el `AppProject portfolio`; `apps/astrolabio.yaml`.
+- [x] Anotaciones `fabiancienfuegos.com/*` en los namespaces y deployments de `hola` y `cv`.
 - [x] Decidir cuánta infraestructura se muestra y si aparecen los nodos: **componentes con detalle desde un catálogo cerrado en la API, sin versiones; nodos como tres soles en el núcleo, sin órbitas** (ver Seguridad en `astrolabio.md`).
 
 **Listo cuando:** los tres `k auth can-i` dan lo esperado y Argo CD muestra `astrolabio` en `Synced`.
 
 ## E1 · Contrato + API (fase 1)
 
-1. [ ] **Contrato:** esqueleto de `api/` con **uv** (`uv init`, Python 3.13, `uv.lock`) (FastAPI, `/docs` y `/openapi.json` apagados en producción) con los modelos `Galaxia`, `Constelacion`, `Estrella` y `Nucleo`. Generar `galaxia.json` de ejemplo. *Desbloquea E2.*
+1. [x] **Contrato:** esqueleto de `api/` con **uv** (`uv init`, Python 3.13, `uv.lock`) (FastAPI, `/docs` y `/openapi.json` apagados en producción) con los modelos `Galaxia`, `Constelacion`, `Estrella` y `Nucleo`. Exportar esquema y ejemplo a `contrato/` con `uv run exportar-contrato`; un test falla si quedan desactualizados. *Desbloquea E2.*
 2. [ ] **Tests de sanitización primero:** fallan si la respuesta contiene `env`, `volumes`, IPs de pods o nodos, el `repoURL` de `homelab-gitops` o mensajes de Events con rutas internas.
 3. [ ] **Informer genérico** list + watch con caché en memoria y re-list ante `410 Gone`, con su test.
 4. [ ] Un informer por recurso: Namespaces, Deployments, StatefulSets, Pods, Services, Events, `HTTPRoute`, `Application` (`argocd`).

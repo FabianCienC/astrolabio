@@ -4,7 +4,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Current state
 
-This directory holds the design doc, `astrolabio.md` (in Spanish), which is the source of truth for scope, decisions and phases, and `PLAN.md`, the staged work plan (order and dependencies, no fixed dates). Read both before making changes. There is no code, build tooling or git repo yet, so there are no build, lint or test commands. Add them here once `web/` and `api/` exist.
+This directory holds the design doc, `astrolabio.md` (in Spanish), which is the source of truth for scope, decisions and phases, and `PLAN.md`, the staged work plan (order and dependencies, no fixed dates). Read both before making changes. `api/` holds the API (contract done; informers next); `web/` and `anomalias/` don't exist yet.
+
+## Commands
+
+API (run from `api/`):
+
+```
+uv sync
+uv run pytest                       # all tests; one: uv run pytest tests/test_contrato.py::test_ejemplo_es_valido_y_cubre_todos_los_estados
+uv run ruff check . && uv run ruff format --check .
+uv run exportar-contrato            # regenerate ../contrato/ after changing modelos.py or ejemplo.py
+ASTROLABIO_ENTORNO=desarrollo uv run uvicorn astrolabio_api.main:app --reload
+```
+
+The public contract of `GET /api/galaxia` is `api/src/astrolabio_api/modelos.py` (Pydantic, `extra="forbid"`). `contrato/galaxia.schema.json` and `contrato/galaxia.ejemplo.json` are generated from it and committed; the web generates its TS types from the schema. Change the models first, then re-export.
 
 Domain vocabulary is in Spanish and should stay that way in code and API paths: *galaxia* = cluster, *constelación* = namespace, *estrella* = workload, *anomalías* = anomaly worker.
 
