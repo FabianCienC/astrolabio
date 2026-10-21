@@ -21,8 +21,8 @@ E0 ──► E1.1 contrato ──┬──► resto de E1 (API) ──┐
 
 ## E0 · Preparar el terreno (fase 0)
 
-- [ ] Rama principal `main` y remoto `FabianCienC/astrolabio` (público).
-- [ ] Deploy key `astrolabio-ci` (escritura) en `homelab-gitops`; su privada como secreto `GITOPS_DEPLOY_KEY`.
+- [x] Rama principal `main` y remoto `FabianCienC/astrolabio` (público).
+- [x] Deploy key `astrolabio-ci` (escritura) en `homelab-gitops`; su privada como secreto `GITOPS_DEPLOY_KEY`.
 - [ ] `homelab-gitops`: `platform/namespaces/astrolabio.yaml` (PSA `restricted`, `gateway-access: public`, etiqueta visible).
 - [ ] `homelab-gitops`: `platform/rbac/astrolabio-reader.yaml` + `apps/rbac.yaml`.
 - [ ] `homelab-gitops`: namespace `astrolabio` y kind `ServiceAccount` en el `AppProject portfolio`; `apps/astrolabio.yaml`.
