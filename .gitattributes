@@ -1,0 +1,13 @@
+# LF en todo el repo: las imágenes, scripts y manifiestos corren en Linux
+* text=auto eol=lf
+
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+*.png binary
+*.jpg binary
+*.webp binary
+*.ktx2 binary
+*.glb binary
+*.woff2 binary
