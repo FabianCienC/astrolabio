@@ -538,6 +538,12 @@
             "type": "string"
           },
           "type": "array"
+        },
+        "traffic": {
+          "$ref": "#/$defs/Traffic",
+          "default": {
+            "requests_per_second": null
+          }
         }
       },
       "required": [
@@ -545,7 +551,8 @@
         "name",
         "hostnames",
         "health",
-        "services"
+        "services",
+        "traffic"
       ],
       "title": "Route",
       "type": "object"
@@ -587,15 +594,45 @@
             "type": "string"
           },
           "type": "array"
+        },
+        "traffic": {
+          "$ref": "#/$defs/Traffic",
+          "default": {
+            "requests_per_second": null
+          }
         }
       },
       "required": [
         "id",
         "name",
         "health",
-        "targets"
+        "targets",
+        "traffic"
       ],
       "title": "Service",
+      "type": "object"
+    },
+    "Traffic": {
+      "additionalProperties": false,
+      "description": "Requests per second through Traefik (phase 4, Prometheus). `None` until there is data.",
+      "properties": {
+        "requests_per_second": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "requests_per_second"
+      ],
+      "title": "Traffic",
       "type": "object"
     },
     "Workload": {

@@ -35,7 +35,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             yield
             return
         # Informers start in the background; the galaxy answers 503 until they sync.
-        cluster = await Cluster.connect()
+        cluster = await Cluster.connect(settings.prometheus_url)
         cluster.start()
         app.state.broadcaster = Broadcaster(
             lambda: assemble_galaxy(cluster.snapshot()) if cluster.synced else None,

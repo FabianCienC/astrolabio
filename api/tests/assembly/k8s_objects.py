@@ -1,13 +1,13 @@
 """Minimal raw Kubernetes objects (API JSON shape) for assembly tests."""
 
-from astrolabio_api.kube.cluster import METRICS_KEYS, RESOURCES
+from astrolabio_api.kube.cluster import SNAPSHOT_KEYS
 
 SHA = "eb8d8c0f9b206ddecb2dec958c851139503a3ea7"
 REPO = "https://github.com/FabianCienC/CV"
 
 
 def empty_snapshot() -> dict[str, list[dict]]:
-    return {key: [] for key in [*(r.key for r in RESOURCES), *METRICS_KEYS]}
+    return {key: [] for key in SNAPSHOT_KEYS}
 
 
 def meta(name, namespace=None, labels=None, annotations=None, owner=None) -> dict:

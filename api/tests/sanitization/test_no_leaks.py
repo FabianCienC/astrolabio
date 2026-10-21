@@ -14,7 +14,7 @@ from poisoned_cluster import SECRETS, SHA, poisoned_cluster
 
 from astrolabio_api.assembly import assemble_galaxy
 from astrolabio_api.config import Settings
-from astrolabio_api.kube.cluster import METRICS_KEYS, RESOURCES
+from astrolabio_api.kube.cluster import SNAPSHOT_KEYS
 from astrolabio_api.main import create_app
 
 # Keys of raw Kubernetes objects, or of data the contract never carries.
@@ -86,6 +86,9 @@ def test_assembled_galaxy_has_no_leaks():
     (pod,) = cv.workloads[0].all_pods()
     assert (pod.metrics.cpu_millicores, pod.metrics.memory_mib) == (3, 12)
     assert cv.workloads[0].metrics == pod.metrics
+    # Traffic arrives as numbers only, on the visible project's route and Service.
+    assert cv.routes[0].traffic.requests_per_second == 1.5
+    assert cv.services[0].traffic.requests_per_second == 1.5
 
 
 def test_metrics_reach_components_and_nodes():
@@ -114,4 +117,4 @@ def test_core_publishes_only_catalog_components():
 
 def test_poisoned_cluster_has_every_watched_resource():
     # The keys are the contract between kube/ and assembly/.
-    assert set(poisoned_cluster()) == {*(r.key for r in RESOURCES), *METRICS_KEYS}
+    assert set(poisoned_cluster()) == set(SNAPSHOT_KEYS)

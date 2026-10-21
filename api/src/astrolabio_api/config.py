@@ -23,6 +23,8 @@ class Settings:
     # "cluster" watches the cluster (in-cluster token, or kubeconfig outside a pod);
     # "example" serves the example galaxy without touching any cluster.
     source: Source = "cluster"
+    # Prometheus for traffic (phase 4); empty turns traffic off.
+    prometheus_url: str = "http://prometheus-server.monitoring.svc"
 
     @property
     def is_development(self) -> bool:
@@ -42,4 +44,7 @@ class Settings:
         return cls(
             environment="development" if env == "development" else "production",
             source="example" if source == "example" else "cluster",
+            prometheus_url=os.environ.get(
+                "ASTROLABIO_PROMETHEUS_URL", "http://prometheus-server.monitoring.svc"
+            ),
         )

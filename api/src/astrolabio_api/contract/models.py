@@ -99,6 +99,12 @@ class Metrics(Model):
     memory_mib: int | None = Field(default=None, ge=0)
 
 
+class Traffic(Model):
+    """Requests per second through Traefik (phase 4, Prometheus). `None` until there is data."""
+
+    requests_per_second: float | None = Field(default=None, ge=0)
+
+
 class Pod(Model):
     """A pod. `name` is `None` for platform pods, which are published anonymously."""
 
@@ -154,6 +160,7 @@ class Service(Model):
     name: Identifier | None
     health: Health
     targets: list[Identifier]
+    traffic: Traffic = Traffic()
 
 
 class Route(Model):
@@ -164,6 +171,7 @@ class Route(Model):
     hostnames: list[str]
     health: Health
     services: list[Identifier]
+    traffic: Traffic = Traffic()
 
     @field_validator("hostnames")
     @classmethod

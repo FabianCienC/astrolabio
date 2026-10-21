@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from astrolabio_api.assembly import assemble_galaxy
 from astrolabio_api.config import Settings
 from astrolabio_api.contract.models import Galaxy
-from astrolabio_api.kube.cluster import METRICS_KEYS, RESOURCES
+from astrolabio_api.kube.cluster import SNAPSHOT_KEYS
 from astrolabio_api.live import Broadcaster
 from astrolabio_api.main import create_app
 
@@ -35,7 +35,7 @@ def test_read_only():
 
 def _snapshot() -> dict:
     """A cluster with one visible project, as the informers would hold it."""
-    snapshot = {key: [] for key in [*(r.key for r in RESOURCES), *METRICS_KEYS]}
+    snapshot = {key: [] for key in SNAPSHOT_KEYS}
     snapshot["namespaces"] = [
         {"metadata": {"name": "hola", "labels": {"fabiancienfuegos.com/astrolabio": "visible"}}}
     ]

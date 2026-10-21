@@ -130,7 +130,10 @@
           "health": "ok",
           "targets": [
             "astrolabio/pod/astrolabio-api-7f9654d4f8-wlv2z"
-          ]
+          ],
+          "traffic": {
+            "requests_per_second": null
+          }
         },
         {
           "id": "astrolabio/service/astrolabio-web",
@@ -139,7 +142,10 @@
           "targets": [
             "astrolabio/pod/astrolabio-web-848cdc9c48-5vtpj",
             "astrolabio/pod/astrolabio-web-848cdc9c48-qfqpr"
-          ]
+          ],
+          "traffic": {
+            "requests_per_second": null
+          }
         }
       ],
       "routes": [
@@ -153,7 +159,10 @@
           "services": [
             "astrolabio/service/astrolabio-api",
             "astrolabio/service/astrolabio-web"
-          ]
+          ],
+          "traffic": {
+            "requests_per_second": null
+          }
         }
       ]
     },
@@ -238,7 +247,10 @@
           "targets": [
             "cv/pod/cv-78ff77987-gx9hx",
             "cv/pod/cv-78ff77987-lhggf"
-          ]
+          ],
+          "traffic": {
+            "requests_per_second": null
+          }
         }
       ],
       "routes": [
@@ -251,7 +263,10 @@
           "health": "ok",
           "services": [
             "cv/service/cv"
-          ]
+          ],
+          "traffic": {
+            "requests_per_second": null
+          }
         }
       ]
     },
@@ -336,7 +351,10 @@
           "targets": [
             "hola/pod/hola-7cddc9f88c-9dt52",
             "hola/pod/hola-7cddc9f88c-gq484"
-          ]
+          ],
+          "traffic": {
+            "requests_per_second": null
+          }
         }
       ],
       "routes": [
@@ -349,7 +367,10 @@
           "health": "ok",
           "services": [
             "hola/service/hola"
-          ]
+          ],
+          "traffic": {
+            "requests_per_second": null
+          }
         }
       ]
     }
@@ -394,7 +415,10 @@
             "health": "ok",
             "targets": [
               "core/kube-apiserver/pod-1"
-            ]
+            ],
+            "traffic": {
+              "requests_per_second": null
+            }
           }
         ]
       },
@@ -549,7 +573,10 @@
             "targets": [
               "core/coredns/pod-1",
               "core/coredns/pod-2"
-            ]
+            ],
+            "traffic": {
+              "requests_per_second": null
+            }
           }
         ]
       },
@@ -653,7 +680,10 @@
             "health": "ok",
             "targets": [
               "core/metrics-server/pod-1"
-            ]
+            ],
+            "traffic": {
+              "requests_per_second": null
+            }
           }
         ]
       },
@@ -801,7 +831,10 @@
             "targets": [
               "core/calico-typha/pod-1",
               "core/calico-typha/pod-2"
-            ]
+            ],
+            "traffic": {
+              "requests_per_second": null
+            }
           }
         ]
       },
@@ -843,7 +876,10 @@
             "health": "ok",
             "targets": [
               "core/calico-kube-controllers/pod-1"
-            ]
+            ],
+            "traffic": {
+              "requests_per_second": null
+            }
           }
         ]
       },
@@ -899,7 +935,10 @@
             "targets": [
               "core/calico-apiserver/pod-1",
               "core/calico-apiserver/pod-2"
-            ]
+            ],
+            "traffic": {
+              "requests_per_second": null
+            }
           }
         ]
       },
@@ -1000,7 +1039,10 @@
             "health": "ok",
             "targets": [
               "core/goldmane/pod-1"
-            ]
+            ],
+            "traffic": {
+              "requests_per_second": null
+            }
           }
         ]
       },
@@ -1042,7 +1084,10 @@
             "health": "ok",
             "targets": [
               "core/whisker/pod-1"
-            ]
+            ],
+            "traffic": {
+              "requests_per_second": null
+            }
           }
         ]
       },
@@ -1084,7 +1129,10 @@
             "health": "ok",
             "targets": [
               "core/argocd-server/pod-1"
-            ]
+            ],
+            "traffic": {
+              "requests_per_second": null
+            }
           },
           {
             "id": "core/argocd-server/service-2",
@@ -1092,7 +1140,10 @@
             "health": "ok",
             "targets": [
               "core/argocd-server/pod-1"
-            ]
+            ],
+            "traffic": {
+              "requests_per_second": null
+            }
           }
         ]
       },
@@ -1134,7 +1185,10 @@
             "health": "ok",
             "targets": [
               "core/argocd-repo-server/pod-1"
-            ]
+            ],
+            "traffic": {
+              "requests_per_second": null
+            }
           }
         ]
       },
@@ -1176,7 +1230,10 @@
             "health": "ok",
             "targets": [
               "core/argocd-application-controller/pod-1"
-            ]
+            ],
+            "traffic": {
+              "requests_per_second": null
+            }
           }
         ]
       },
@@ -1218,7 +1275,10 @@
             "health": "ok",
             "targets": [
               "core/argocd-applicationset-controller/pod-1"
-            ]
+            ],
+            "traffic": {
+              "requests_per_second": null
+            }
           }
         ]
       },
@@ -1260,7 +1320,10 @@
             "health": "ok",
             "targets": [
               "core/argocd-notifications-controller/pod-1"
-            ]
+            ],
+            "traffic": {
+              "requests_per_second": null
+            }
           }
         ]
       },
@@ -1302,7 +1365,10 @@
             "health": "ok",
             "targets": [
               "core/argocd-dex-server/pod-1"
-            ]
+            ],
+            "traffic": {
+              "requests_per_second": null
+            }
           }
         ]
       },
@@ -1344,7 +1410,10 @@
             "health": "ok",
             "targets": [
               "core/argocd-redis/pod-1"
-            ]
+            ],
+            "traffic": {
+              "requests_per_second": null
+            }
           }
         ]
       },
@@ -1389,7 +1458,10 @@
             "health": "ok",
             "targets": [
               "core/traefik/pod-1"
-            ]
+            ],
+            "traffic": {
+              "requests_per_second": null
+            }
           }
         ]
       },
@@ -1483,7 +1555,10 @@
             "health": "ok",
             "targets": [
               "core/sealed-secrets/pod-1"
-            ]
+            ],
+            "traffic": {
+              "requests_per_second": null
+            }
           },
           {
             "id": "core/sealed-secrets/service-2",
@@ -1491,7 +1566,10 @@
             "health": "ok",
             "targets": [
               "core/sealed-secrets/pod-1"
-            ]
+            ],
+            "traffic": {
+              "requests_per_second": null
+            }
           }
         ]
       }

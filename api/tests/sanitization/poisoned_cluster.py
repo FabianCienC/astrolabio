@@ -359,6 +359,24 @@ def poisoned_cluster() -> dict[str, list[dict]]:
                 ],
             },
         ],
+        # Prometheus results for Traefik traffic: labels carry internal names (gateway,
+        # hashes, a hidden project); only the numbers of visible routes may come out.
+        "traffic": [
+            {
+                "metric": {
+                    "service": "httproute-cv-cv-gw-traefik-public-ep-web-0-0f3c9a1b2c3d4e5f6a7b"
+                    "-svc-cv-cv-0@kubernetesgateway"
+                },
+                "value": [1792618841.391, "1.5"],
+            },
+            {
+                "metric": {
+                    "service": "httproute-lab-privado-proyecto-secreto-gw-traefik-public-ep-web-0"
+                    "-9a8b7c6d5e4f3a2b1c0d-svc-lab-privado-proyecto-secreto-0@kubernetesgateway"
+                },
+                "value": [1792618841.391, "9"],
+            },
+        ],
         "nodemetrics": [
             {
                 "metadata": _meta("k8s-cp-01", labels={"kubernetes.io/hostname": "k8s-cp-01"}),

@@ -182,6 +182,7 @@ name = "astrolabio-api"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "aiohttp" },
     { name = "fastapi" },
     { name = "kubernetes-asyncio" },
     { name = "uvicorn", extra = ["standard"] },
@@ -196,6 +197,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "aiohttp", specifier = ">=3.14.5" },
     { name = "fastapi", specifier = ">=0.156.4" },
     { name = "kubernetes-asyncio", specifier = ">=36.1.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.54.0" },

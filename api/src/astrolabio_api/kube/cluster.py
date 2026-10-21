@@ -23,6 +23,7 @@ from kubernetes_asyncio.client import (
 from .informer import Informer, RawObject
 from .metrics import MetricsPoller
 from .source import ApiSource, ListFunction
+from .traffic import TrafficPoller
 
 
 @dataclass(frozen=True)
@@ -58,6 +59,10 @@ RESOURCES = (
 
 # Snapshot keys filled by the metrics poller (polled, not watched; empty without metrics-server).
 METRICS_KEYS = ("podmetrics", "nodemetrics")
+# Snapshot key filled by the traffic poller (Prometheus; empty without it).
+TRAFFIC_KEY = "traffic"
+# Every key of `Cluster.snapshot()`: the contract between kube/ and assembly/.
+SNAPSHOT_KEYS = (*(r.key for r in RESOURCES), *METRICS_KEYS, TRAFFIC_KEY)
 
 
 async def load_configuration() -> Configuration:
@@ -71,7 +76,7 @@ async def load_configuration() -> Configuration:
 
 
 class Cluster:
-    def __init__(self, client: ApiClient) -> None:
+    def __init__(self, client: ApiClient, prometheus_url: str = "") -> None:
         self._client = client
         # Set by any informer on any change; `live.py` waits on it to push the galaxy.
         self.changed = asyncio.Event()
@@ -86,17 +91,22 @@ class Cluster:
             partial(metrics.list_cluster_custom_object, "metrics.k8s.io", "v1beta1", "nodes"),
             on_change=self.changed.set,
         )
+        # Requests per second through Traefik (Prometheus): polled, and optional.
+        self.traffic = TrafficPoller(prometheus_url, on_change=self.changed.set)
+        self._prometheus = bool(prometheus_url)
         self._tasks: list[asyncio.Task] = []
 
     @classmethod
-    async def connect(cls) -> "Cluster":
-        return cls(ApiClient(configuration=await load_configuration()))
+    async def connect(cls, prometheus_url: str = "") -> "Cluster":
+        return cls(ApiClient(configuration=await load_configuration()), prometheus_url)
 
     def start(self) -> None:
         self._tasks = [
             asyncio.create_task(informer.run(), name=f"informer-{key}")
             for key, informer in self.informers.items()
         ] + [asyncio.create_task(self.metrics.run(), name="metrics")]
+        if self._prometheus:
+            self._tasks.append(asyncio.create_task(self.traffic.run(), name="traffic"))
 
     @property
     def synced(self) -> bool:
@@ -110,6 +120,7 @@ class Cluster:
         return {
             **{key: informer.items() for key, informer in self.informers.items()},
             **{key: self.metrics.items(key) for key in METRICS_KEYS},
+            TRAFFIC_KEY: self.traffic.items(),
         }
 
     async def close(self) -> None:

@@ -106,6 +106,13 @@ export interface Service {
   name: string | null;
   health: "ok" | "degraded" | "down" | "unknown";
   targets: string[];
+  traffic: Traffic;
+}
+/**
+ * Requests per second through Traefik (phase 4, Prometheus). `None` until there is data.
+ */
+export interface Traffic {
+  requests_per_second: number | null;
 }
 /**
  * An `HTTPRoute`: the public entry into a project. Hostnames are public by nature.
@@ -116,6 +123,13 @@ export interface Route {
   hostnames: string[];
   health: "ok" | "degraded" | "down" | "unknown";
   services: string[];
+  traffic: Traffic1;
+}
+/**
+ * Requests per second through Traefik (phase 4, Prometheus). `None` until there is data.
+ */
+export interface Traffic1 {
+  requests_per_second: number | null;
 }
 /**
  * The galactic core: platform components and the cluster nodes.

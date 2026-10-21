@@ -32,6 +32,7 @@ from ..contract.models import (
     is_public_host,
 )
 from . import annotations as ann
+from . import traffic
 from .health import pod_health, ready_health, replicas_health, worst
 from .metrics import PodKey, pod_key, pod_metrics, total
 from .raw import (
@@ -139,6 +140,7 @@ class _Project:
     ):
         self.ns = name(namespace)
         self.usage = usage
+        self.rates = traffic.rates(snapshot)
         self.namespace = namespace
         self.snapshot = snapshot
         self.node_ids = node_ids
@@ -259,6 +261,7 @@ class _Project:
             if selector
             else "unknown",
             targets=[p.id for p in targets],
+            traffic=traffic.service_traffic(self.rates, self.ns, name(raw)),
         )
 
     def _route(self, raw: RawObject, services: list[Service]) -> Route:
@@ -280,6 +283,7 @@ class _Project:
             hostnames=[h for h in spec(raw).get("hostnames") or [] if is_public_host(h)],
             health=_route_health(raw),
             services=targets,
+            traffic=traffic.route_traffic(self.rates, self.ns, name(raw)),
         )
 
     def _application(self) -> RawObject | None:
