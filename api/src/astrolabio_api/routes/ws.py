@@ -24,8 +24,9 @@ async def galaxy_stream(websocket: WebSocket) -> None:
         await websocket.close(code=POLICY_VIOLATION)
         return
     broadcaster: Broadcaster = websocket.app.state.broadcaster
-    queue = broadcaster.subscribe()
-    if queue is None:  # too many clients, or the cache is still syncing
+    # Cloudflare names the visitor (traffic only reaches us through its tunnel).
+    queue = broadcaster.subscribe(websocket.headers.get("cf-connecting-ip"))
+    if queue is None:  # too many clients (or from this visitor), or still syncing
         await websocket.close(code=TRY_AGAIN_LATER)
         return
 

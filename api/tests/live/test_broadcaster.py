@@ -114,3 +114,11 @@ async def test_turns_clients_away_when_full():
     broadcaster.unsubscribe(first)
     assert broadcaster.subscribe() is not None
     assert second is not None
+
+
+async def test_one_visitor_cannot_take_every_slot():
+    cluster = Cluster()
+    broadcaster = Broadcaster(cluster.snapshot, cluster.changed, max_per_visitor=2)
+    assert broadcaster.subscribe("203.0.113.7") and broadcaster.subscribe("203.0.113.7")
+    assert broadcaster.subscribe("203.0.113.7") is None
+    assert broadcaster.subscribe("198.51.100.4") is not None  # others still get in

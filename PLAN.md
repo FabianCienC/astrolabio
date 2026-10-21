@@ -74,7 +74,7 @@ Puede empezar en cuanto exista el contrato (E1.1).
 ## Endurecimiento (antes de difundir la URL)
 
 - [ ] Cloudflare: *rate limiting* en `/api` y `/ws`, WAF administrado.
-- [ ] Revisión de seguridad completa contra las invariantes de `CLAUDE.md`.
+- [x] Revisión de seguridad completa contra las invariantes de `CLAUDE.md` (2026-10-21), verificada contra producción. **Bien:** sin docs ni esquema de FastAPI, solo GET (POST/PUT/DELETE/PATCH/OPTIONS → 405), sin CORS, CSP en la web, RBAC explícito sin secrets ni configmaps, solo la API con token, raíz de solo lectura y sin capabilities en ambos pods, nada de dev ni source maps en el build, sin secretos en el historial, y `find_leaks` limpio sobre la foto real. **Corregido:** cualquier ruta devolvía la página con 200 (ahora 404 real); la API no mandaba headers de seguridad (ahora `nosniff`, CSP `default-src 'none'`, `no-store`); cada `GET /api/galaxy` ensamblaba la galaxia (ahora sale de la caché del broadcaster: una ráfaga cuesta un ensamblado); un solo visitante podía ocupar los 200 lugares de `/ws` (ahora máx. 4 por IP según `CF-Connecting-IP`). **Pendiente en Cloudflare:** HSTS (ver abajo).
 - [ ] README del repo y nota de portafolio.
 
 ## E4 · Líneas de tráfico (fase 4)

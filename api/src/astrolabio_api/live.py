@@ -18,6 +18,8 @@ log = logging.getLogger(__name__)
 BATCH_SECONDS = 1.0
 # Beyond this, new clients are turned away: each one costs a queue and a socket.
 MAX_CLIENTS = 200
+# Connections one visitor (one IP) may hold, so a single client can't take every slot.
+MAX_PER_VISITOR = 4
 
 
 class Broadcaster:
@@ -28,6 +30,7 @@ class Broadcaster:
         *,
         batch_seconds: float = BATCH_SECONDS,
         max_clients: int = MAX_CLIENTS,
+        max_per_visitor: int = MAX_PER_VISITOR,
     ) -> None:
         """`snapshot` builds the current galaxy (None while the cache syncs); `changed` is set
         by the informers on any change."""
@@ -35,8 +38,9 @@ class Broadcaster:
         self._changed = changed
         self._batch_seconds = batch_seconds
         self._max_clients = max_clients
+        self._max_per_visitor = max_per_visitor
         # One slot per client: a slow client gets the newest galaxy, never a backlog.
-        self._clients: set[asyncio.Queue[str]] = set()
+        self._clients: dict[asyncio.Queue[str], str | None] = {}  # queue -> visitor
         self._last_payload: str | None = None
         self._last_key: str | None = None
 
@@ -44,19 +48,32 @@ class Broadcaster:
     def clients(self) -> int:
         return len(self._clients)
 
-    def subscribe(self) -> asyncio.Queue[str] | None:
-        """A queue that starts with the current galaxy; None when full or not synced yet."""
+    def current(self) -> str | None:
+        """The latest galaxy as JSON: assembled once per change, not once per request.
+        None while the cache syncs."""
+        if self._last_payload is None:
+            self._refresh()
+        return self._last_payload
+
+    def subscribe(self, visitor: str | None = None) -> asyncio.Queue[str] | None:
+        """A queue that starts with the current galaxy; None when full (overall or for this
+        visitor) or not synced yet."""
         if len(self._clients) >= self._max_clients:
+            return None
+        if visitor is not None and self._held_by(visitor) >= self._max_per_visitor:
             return None
         if self._last_payload is None and not self._refresh():
             return None
         queue: asyncio.Queue[str] = asyncio.Queue(maxsize=1)
         queue.put_nowait(self._last_payload)  # type: ignore[arg-type]
-        self._clients.add(queue)
+        self._clients[queue] = visitor
         return queue
 
     def unsubscribe(self, queue: asyncio.Queue[str]) -> None:
-        self._clients.discard(queue)
+        self._clients.pop(queue, None)
+
+    def _held_by(self, visitor: str) -> int:
+        return sum(v == visitor for v in self._clients.values())
 
     async def run(self) -> None:
         """Pushes every real change until cancelled."""

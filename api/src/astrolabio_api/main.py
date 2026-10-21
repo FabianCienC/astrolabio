@@ -8,7 +8,7 @@ import contextlib
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 
 from .assembly import assemble_galaxy
 from .config import Settings
@@ -16,6 +16,14 @@ from .contract.example import example_galaxy
 from .kube.cluster import Cluster
 from .live import Broadcaster
 from .routes import galaxy, ws
+
+# Every API response is data, never a page: nothing may sniff, frame, embed or cache it.
+SECURITY_HEADERS = {
+    "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "no-referrer",
+    "Cache-Control": "no-store",
+}
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -29,7 +37,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         # Informers start in the background; the galaxy answers 503 until they sync.
         cluster = await Cluster.connect()
         cluster.start()
-        app.state.cluster = cluster
         app.state.broadcaster = Broadcaster(
             lambda: assemble_galaxy(cluster.snapshot()) if cluster.synced else None,
             cluster.changed,
@@ -52,9 +59,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=lifespan,
     )
     app.state.settings = settings
+
+    @app.middleware("http")
+    async def security_headers(request: Request, call_next) -> Response:
+        response = await call_next(request)
+        response.headers.update(SECURITY_HEADERS)
+        return response
+
     # Without a cluster (ASTROLABIO_SOURCE=example) both endpoints serve the example,
     # and /ws never pushes a change.
-    app.state.cluster = None
     app.state.broadcaster = Broadcaster(example_galaxy, asyncio.Event())
     app.include_router(galaxy.router)
     app.include_router(ws.router)
