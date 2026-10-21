@@ -39,7 +39,7 @@ E0 ──► E1.1 contrato ──┬──► resto de E1 (API) ──┐
 4. [x] Un informer por recurso (`kube/cluster.py`): Nodes, Namespaces, Pods, Services, Events, Deployments, ReplicaSets, StatefulSets, DaemonSets, `HTTPRoute`, `Application` (`argocd`). Adaptador propio sobre `kubernetes_asyncio` que lee el JSON crudo (`kube/source.py`).
 5. [x] Ensamblado de la galaxia (`assembly/`, función pura: caché → `Galaxy`): anotaciones, commit desde el tag de imagen, sync/salud de Argo (sin revisión: es del repo privado) y allowlist por etiqueta. Conectado a `GET /api/galaxy` (503 hasta que sincronizan los informers; `ASTROLABIO_SOURCE=example` sirve el ejemplo sin clúster).
 6. [x] **Catálogo de infraestructura** (`assembly/catalog.py`): componente → nombre, función y workload que lo respalda (CoreDNS, kube-proxy, API server, etcd, Calico, Traefik, Argo CD, cloudflared, Sealed Secrets…). Núcleo con sus componentes y los tres nodos (control plane, worker 1, worker 2). Test: nada fuera del catálogo aparece, y ningún componente de plataforma lleva versión ni tag.
-7. [ ] Prueba local: `uvicorn` contra el clúster con kubeconfig por túnel SSH.
+7. [x] Prueba local: `uvicorn` contra el clúster con la identidad real de `astrolabio-api` (token corto) por túnel SSH vía `pve` (pasos en `CLAUDE.md`). 2026-10-21: los 11 informers sincronizan sin 403, `find_leaks` limpio sobre la respuesta real, los 25 componentes del catálogo presentes y el resultado igual a `contract/example.py`; los watches reflejan el reemplazo de pods sin recargar.
 8. [ ] Imagen: `python:3.13-slim`, UID 10001, dependencias con hash vía `uv sync --locked` (o `uv export --hashes`) en una etapa de build.
 9. [ ] CI (`.github/workflows/ci.yaml`): job por carpeta con `paths`, Trivy, push a ghcr y bump con `yq` en `homelab-gitops`. `dependabot.yml`.
 10. [ ] Manifiestos en `homelab-gitops/workloads/astrolabio/`: deployment, SA, service, `HTTPRoute` y NetworkPolicy de salida a `192.168.0.41:6443` + DNS.
@@ -60,7 +60,7 @@ Puede empezar en cuanto exista el contrato (E1.1).
 8. [ ] Rendimiento: medir fps; en dispositivos lentos, bajar automáticamente las partículas y el bloom. Probar en celular real.
 9. [ ] Conectar a `/api/galaxy` real. Imagen con `nginx-unprivileged`, headers y CSP (`connect-src 'self' wss://astrolabio.fabiancienfuegos.com`), deployment ×2 sin token de SA y *default deny*.
 
-**Listo cuando:** se ve fluida en el celular y `k -n hola scale deploy hola --replicas=0` (y de regreso) se refleja al recargar.
+**Listo cuando:** se ve fluida en el celular y `k -n hola scale deploy hola --replicas=0` (y de regreso) se refleja al recargar. (Argo CD tiene `selfHeal` en `hola`: hay que pausar la sincronización automática para la prueba, o revierte el escalado en segundos.)
 
 ## E3 · En vivo (fase 3)
 

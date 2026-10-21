@@ -85,4 +85,11 @@ Kubernetes manifests do **not** live here. They go in `homelab-gitops` under `wo
 
 0 repo/RBAC/namespace setup → 1 watchers + `GET /api/galaxy` → 2 3D galaxy → 3 WebSocket + metrics-server (CPU → brightness) → 4 Prometheus + Traefik traffic lines → 5 anomalies + Bedrock. Each phase has a concrete "listo cuando" (done-when) check in `astrolabio.md`.
 
-For local API development, run `uvicorn` against the cluster with a kubeconfig over an SSH tunnel. Use `k auth can-i ... --as=system:serviceaccount:astrolabio:astrolabio-api` to verify RBAC.
+For local API development, run `uvicorn` against the cluster as the real `astrolabio-api` identity (never an admin kubeconfig, so missing RBAC shows up locally):
+
+1. Tunnel: the Proxmox firewall only lets the VMs be reached through `pve`. Use **Windows' OpenSSH** (`C:\Windows\System32\OpenSSH\ssh.exe -N -L 127.0.0.1:6443:192.168.0.41:6443 pve`): the key lives in the Windows ssh-agent, which Git Bash's `ssh` can't see.
+2. On the control plane the user runs `kubectl -n astrolabio create token astrolabio-api --duration=2h` and shares the token; the CA is `/etc/kubernetes/pki/ca.crt`.
+3. Kubeconfig outside the repo (`~/.kube/astrolabio-dev`): `server: https://127.0.0.1:6443` plus `tls-server-name: kubernetes` (the API server cert has no `127.0.0.1` SAN), the CA file and the token.
+4. `KUBECONFIG=~/.kube/astrolabio-dev ASTROLABIO_ENV=development uv run uvicorn astrolabio_api.main:app`, then check `/api/galaxy` (503 until the informers sync).
+
+Use `k auth can-i ... --as=system:serviceaccount:astrolabio:astrolabio-api` to verify RBAC. Argo CD self-heals `hola` and `cv`, so `kubectl scale` is reverted within seconds; pause auto-sync to test scaling.
