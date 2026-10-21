@@ -22,15 +22,16 @@ Misma línea visual de nodos-constelación de Elyx, pero sobre mi propia infraes
 
 ## Identidad visual: tiene que verse galáctica
 
-Es el requisito central del proyecto. Si se ve como un diagrama de cajas con efectos, falló. Tiene que sentirse como **mirar el espacio**.
+Es el requisito central del proyecto. Si se ve como un diagrama de cajas con efectos, falló. Tiene que sentirse como **mirar el espacio**, pero con una estética **limpia**: fondo negro, círculos de luz uniformes y nada de adorno que no comunique algo.
 
 **El frontend usa Three.js (WebGL), sin excepción.** Nada de SVG ni canvas 2D para la escena principal.
 
 | Elemento | Cómo debe verse | Técnica en Three.js |
 | --- | --- | --- |
-| Fondo | Cielo profundo con miles de estrellas lejanas y un leve paralaje al mover la cámara | `Points` con un `BufferGeometry` de partículas, en capas a distintas profundidades |
-| Estrellas (workloads) | Puntos de luz que **brillan y respiran**, no esferas sólidas. El halo crece con la CPU o el tráfico | Sprites o `Points` con shader propio + `UnrealBloomPass` (post-procesado) |
-| Constelaciones (namespaces) | Grupos de estrellas unidos por **líneas finas y luminosas**, como en una carta astronómica, con una **nebulosa** de color detrás de cada proyecto | `Line` / `LineSegments` con material aditivo; nebulosa con planos de ruido (shader con *fbm*) y transparencia |
+| Fondo | **Negro liso**, sin cielo de estrellas: el contenido es lo único que brilla | `scene.background` negro |
+| Objetos de Kubernetes | **Cada objeto tiene su propio nodo visible**: namespace (anillo central, faro del proyecto), Deployment/StatefulSet, ReplicaSet activo, pod, Service y HTTPRoute. Formas uniformes con un bloom ceñido (círculo, anillo, rombo, triángulo), sin picos ni halos. El color indica la salud y la forma y el tamaño el tipo. La propiedad se lee por posición (los pods rodean su ReplicaSet, junto a su workload, alrededor del anillo del namespace); las líneas solo marcan relaciones reales (Service → Pod, ruta → Service); el brillo seguirá a la CPU o el tráfico | `Points` con shader propio (disco plano) + `UnrealBloomPass` con los niveles amplios apagados |
+| Leyenda | Abajo a la izquierda, explica cada color, tamaño y símbolo; crece conforme se agregan elementos visuales | Componente React generado desde `web/src/scene/symbology.ts`, la misma fuente que usa la escena |
+| Constelaciones (namespaces) | Una **nebulosa** de color detrás de cada proyecto, que ayuda a encontrarlo. Sin líneas de agrupación: una línea solo representa una relación real o tráfico. Las nebulosas usan solo tonos fríos y tenues (índigo a violeta) para no confundirse con los colores de salud; el núcleo también tiene su nebulosa | `Line` / `LineSegments` con material aditivo; nebulosa con planos de ruido (shader con *fbm*) y transparencia |
 | Núcleo de infraestructura | Un centro galáctico brillante y difuso del que nacen los brazos donde viven los proyectos. Dentro, cada componente de plataforma (Traefik, Argo CD, Calico…) es una estrella con su propia ficha | Disco de partículas con rotación lenta y gradiente de color; componentes como `Points` con el mismo shader de las estrellas |
 | Nodos del clúster | Tres "soles" en el corazón del núcleo (control plane y dos workers), con brillo según su CPU. Los workloads **no** orbitan alrededor de ellos: las constelaciones siguen agrupadas por proyecto | Sprites grandes con bloom; la ficha muestra salud, pods y CPU/RAM |
 | Tráfico | Pulsos de luz que viajan por las líneas cuando hay peticiones | Partículas animadas a lo largo de curvas (`CatmullRomCurve3`) |
@@ -41,7 +42,7 @@ Es el requisito central del proyecto. Si se ve como un diagrama de cajas con efe
 
 - **Rendimiento:** `InstancedMesh` o `Points` para todo lo que se repite. Objetivo: 60 fps en laptop y 30+ fps en celular.
 - **Celular:** si el dispositivo es lento, se reduce automáticamente la cantidad de partículas y la intensidad del bloom.
-- **Accesibilidad:** respetar `prefers-reduced-motion` (sin pulsos ni rotación), y ofrecer una vista de lista con el mismo contenido para lectores de pantalla.
+- **Accesibilidad:** respetar `prefers-reduced-motion` (sin pulsos ni rotación automática; las transiciones siguen siendo animaciones suaves, nunca saltos), y ofrecer una vista de lista con el mismo contenido para lectores de pantalla.
 - **Coherencia con Elyx:** misma familia de nodos-constelación, pero con paleta y profundidad de espacio propias.
 
 ## Qué esperamos lograr
@@ -258,7 +259,7 @@ k auth can-i delete pods --as=system:serviceaccount:astrolabio:astrolabio-api   
 - **Namespaces visibles por allowlist.** Solo los que tienen `fabiancienfuegos.com/astrolabio: visible` se dibujan con detalle.
 - **Infraestructura como vitrina, con catálogo cerrado.** La plataforma (`kube-system`, `argocd`, `traefik`, `cloudflared`, `calico-system`) forma el núcleo galáctico y sí muestra sus componentes, para presentar la infraestructura que se mantiene. Solo aparecen los componentes listados en un **catálogo dentro de la API** (nombre, función, workload que lo respalda); lo que no está en el catálogo no se publica. Las descripciones viven en el catálogo, no en anotaciones, porque varios componentes son pods estáticos de kubeadm o los crea un operador y no se pueden anotar por GitOps.
   - **Se muestra:** nombre, función, salud, réplicas listas/deseadas, sync y salud de Argo CD (si aplica) y, desde la fase 3, CPU/RAM.
-  - **No se muestra:** nombres de pods, IPs, puertos, **versiones o tags de imagen** (darían a cualquiera la lista exacta de CVE a probar), argumentos, configuración ni `repoURL`.
+  - **No se muestra:** nombres de pods y services de la plataforma (se dibujan, pero anónimos), IPs, puertos, **versiones o tags de imagen** (darían a cualquiera la lista exacta de CVE a probar), argumentos, configuración ni `repoURL`.
   - **Nodos:** se publican como "control plane", "worker 1" y "worker 2", sin hostname ni IP.
 - **Solo lectura de punta a punta.** RBAC sin verbos de escritura, y API sin endpoints `POST`, `PUT` ni `DELETE`. La documentación automática de FastAPI (`/docs`, `/openapi.json`) queda **desactivada** en producción.
 - **Cloudflare como escudo:** una regla de *rate limiting* en `/api` y `/ws` (el plan gratuito incluye una), WAF administrado activado y el tráfico solo por el túnel.

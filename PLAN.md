@@ -50,13 +50,13 @@ E0 ──► E1.1 contrato ──┬──► resto de E1 (API) ──┐
 
 Puede empezar en cuanto exista el contrato (E1.1).
 
-1. [ ] Esqueleto de `web/`: Vite + React + TypeScript + Three.js, con la escena montada en un componente y cargando el fixture.
-2. [ ] **Spike visual (punto de decisión):** fondo de partículas en capas con paralaje + una estrella con shader propio y `UnrealBloomPass`. Se itera hasta que **se sienta como mirar el espacio** antes de seguir.
-3. [ ] Estrellas: `Points` con shader, brillo que respira, color y animación según la salud (ok / degradado / caído).
-4. [ ] Constelaciones: líneas finas con material aditivo y una nebulosa con fbm por proyecto.
-5. [ ] Núcleo de infraestructura: disco de partículas con rotación lenta, componentes como estrellas con ficha y los tres nodos como soles.
-6. [ ] Interacción: `OrbitControls`, `Raycaster`, vuelo de cámara y ficha en React (qué es, rol, repo, commit con enlace y estado de Argo).
-7. [ ] Accesibilidad: vista de lista con el mismo contenido y `prefers-reduced-motion` (sin pulsos ni rotación).
+1. [x] Esqueleto de `web/`: Vite + React + TypeScript + Three.js, con la escena montada en un componente y cargando el fixture.
+2. [x] **Spike visual (punto de decisión):** fondo negro, objetos como formas uniformes con bloom ceñido y leyenda abajo a la izquierda. Visto bueno del look el 2026-10-21.
+3. [x] Objetos: cada objeto de Kubernetes con su nodo visible (namespace, workload, ReplicaSet activo, pod, Service, HTTPRoute), forma, tamaño y color por tipo (el estado vive en la barra lateral, no en la escena), propiedad por posición y líneas solo para relaciones reales. Contrato v2 en la API, con un ejemplo que es una foto real del clúster.
+4. [x] Constelaciones: nebulosa con fbm por proyecto, en tonos fríos (sin líneas de agrupación), y nombre flotante de cada proyecto.
+5. [x] Núcleo de infraestructura: los tres nodos al centro y un cúmulo por sistema de la plataforma (Kubernetes, Calico, Argo CD…) con su nebulosa y su nombre; cada workload de la plataforma con sus pods y Services, anónimos.
+6. [x] Interacción: cámara siempre suave (`cameraRig.ts`: zoom que se desliza hacia el cursor, vuelos en arco, pan con límite, regreso a la vista inicial al deseleccionar), selección por clic o desde la barra lateral siempre visible, halo y atenuación del resto, mini tarjeta al pasar el cursor, ficha con estado, réplicas, commit, Argo CD y enlaces entre objetos relacionados.
+7. [ ] Accesibilidad: vista de lista con el mismo contenido. (`prefers-reduced-motion` ya está: sin rotación automática, transiciones siempre suaves.)
 8. [ ] Rendimiento: medir fps; en dispositivos lentos, bajar automáticamente las partículas y el bloom. Probar en celular real.
 9. [ ] Conectar a `/api/galaxy` real. Imagen con `nginx-unprivileged`, headers y CSP (`connect-src 'self' wss://astrolabio.fabiancienfuegos.com`), deployment ×2 sin token de SA y *default deny*.
 
