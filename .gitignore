@@ -27,3 +27,6 @@ kubeconfig*
 .idea/
 .DS_Store
 Thumbs.db
+
+# Capturas de iteración visual (locales, no van al repo)
+mockups/

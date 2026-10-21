@@ -34,7 +34,7 @@ E0 ──► E1.1 contrato ──┬──► resto de E1 (API) ──┐
 ## E1 · Contrato + API (fase 1)
 
 1. [x] **Contrato:** esqueleto de `api/` con **uv** (`uv init`, Python 3.13, `uv.lock`) (FastAPI, `/docs` y `/openapi.json` apagados en producción) con los modelos `Galaxy`, `Constellation`, `Star` y `Core`, organizado por capas (ver `api/README.md`). Exportar esquema y ejemplo a `contract/` con `uv run export-contract`; un test falla si quedan desactualizados. *Desbloquea E2.*
-2. [ ] **Tests de sanitización primero:** fallan si la respuesta contiene `env`, `volumes`, IPs de pods o nodos, el `repoURL` de `homelab-gitops` o mensajes de Events con rutas internas.
+2. [x] **Tests de sanitización primero:** fallan si la respuesta contiene `env`, `volumes`, IPs de pods o nodos, el `repoURL` de `homelab-gitops` o mensajes de Events con rutas internas. Un "clúster envenenado" (`tests/sanitization/`) con objetos crudos llenos de datos prohibidos; la prueba sobre `assembly/` queda en `xfail` estricto hasta E1.5–E1.6.
 3. [ ] **Informer genérico** (`kube/`) list + watch con caché en memoria y re-list ante `410 Gone`, con su test.
 4. [ ] Un informer por recurso: Namespaces, Deployments, StatefulSets, Pods, Services, Events, `HTTPRoute`, `Application` (`argocd`).
 5. [ ] Ensamblado de la galaxia (`assembly/`, función pura: caché → `Galaxy`): anotaciones, commit desde el tag de imagen, sync/salud/revisión de Argo y allowlist por etiqueta.

@@ -43,3 +43,6 @@ Rules that keep the layers honest:
 - `routes/` never touches k8s objects; it only returns contract models.
 
 Tests mirror this layout: `tests/contract/`, `tests/routes/`, and later `tests/kube/` and `tests/assembly/`.
+`tests/sanitization/` cuts across them: `find_leaks` scans what the API serves for raw k8s keys,
+IPs, versions, internal paths and the secrets of a poisoned cluster (`poisoned_cluster.py`, raw API
+JSON). Its `assembly/` test is a strict `xfail` until `assembly/` exists; drop the mark then.
