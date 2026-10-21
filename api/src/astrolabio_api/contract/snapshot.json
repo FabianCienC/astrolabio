@@ -1,0 +1,1490 @@
+{
+  "version": 2,
+  "generated_at": "2026-10-21T19:53:22.107122Z",
+  "constellations": [
+    {
+      "id": "astrolabio",
+      "project": "Astrolabio",
+      "description": "Visualización 3D en tiempo real del homelab",
+      "repo": "https://github.com/FabianCienC/astrolabio",
+      "argo": {
+        "sync": "Synced",
+        "health": "Healthy"
+      },
+      "health": "ok",
+      "workloads": [
+        {
+          "id": "astrolabio/deployment/astrolabio-api",
+          "name": "astrolabio-api",
+          "kind": "Deployment",
+          "description": "Lee el clúster en vivo y lo sirve sanitizado como galaxia",
+          "role": "api",
+          "criticality": "medium",
+          "replicas": {
+            "desired": 1,
+            "ready": 1
+          },
+          "health": "ok",
+          "commit": {
+            "sha": "678873b2d61a2759debf9980add1cfd780b01633",
+            "url": "https://github.com/FabianCienC/astrolabio/commit/678873b2d61a2759debf9980add1cfd780b01633"
+          },
+          "metrics": {
+            "cpu_millicores": 2,
+            "memory_mib": 89
+          },
+          "replica_sets": [
+            {
+              "id": "astrolabio/replicaset/astrolabio-api-7d586f78",
+              "name": "astrolabio-api-7d586f78",
+              "replicas": {
+                "desired": 1,
+                "ready": 1
+              },
+              "health": "ok",
+              "pods": [
+                {
+                  "id": "astrolabio/pod/astrolabio-api-7d586f78-k8vv4",
+                  "name": "astrolabio-api-7d586f78-k8vv4",
+                  "phase": "Running",
+                  "ready": true,
+                  "restarts": 0,
+                  "node": "worker-2",
+                  "health": "ok",
+                  "metrics": {
+                    "cpu_millicores": 2,
+                    "memory_mib": 89
+                  }
+                }
+              ]
+            }
+          ],
+          "pods": []
+        },
+        {
+          "id": "astrolabio/deployment/astrolabio-web",
+          "name": "astrolabio-web",
+          "kind": "Deployment",
+          "description": "La galaxia 3D: build de Vite servido con nginx",
+          "role": "frontend",
+          "criticality": "medium",
+          "replicas": {
+            "desired": 2,
+            "ready": 2
+          },
+          "health": "ok",
+          "commit": {
+            "sha": "8c2732f8fe3efe6260285e3aaa326649c2e71b05",
+            "url": "https://github.com/FabianCienC/astrolabio/commit/8c2732f8fe3efe6260285e3aaa326649c2e71b05"
+          },
+          "metrics": {
+            "cpu_millicores": 0,
+            "memory_mib": 6
+          },
+          "replica_sets": [
+            {
+              "id": "astrolabio/replicaset/astrolabio-web-b4bbf56c4",
+              "name": "astrolabio-web-b4bbf56c4",
+              "replicas": {
+                "desired": 2,
+                "ready": 2
+              },
+              "health": "ok",
+              "pods": [
+                {
+                  "id": "astrolabio/pod/astrolabio-web-b4bbf56c4-4gx7l",
+                  "name": "astrolabio-web-b4bbf56c4-4gx7l",
+                  "phase": "Running",
+                  "ready": true,
+                  "restarts": 0,
+                  "node": "worker-2",
+                  "health": "ok",
+                  "metrics": {
+                    "cpu_millicores": 0,
+                    "memory_mib": 3
+                  }
+                },
+                {
+                  "id": "astrolabio/pod/astrolabio-web-b4bbf56c4-7f8cr",
+                  "name": "astrolabio-web-b4bbf56c4-7f8cr",
+                  "phase": "Running",
+                  "ready": true,
+                  "restarts": 0,
+                  "node": "worker-2",
+                  "health": "ok",
+                  "metrics": {
+                    "cpu_millicores": 0,
+                    "memory_mib": 3
+                  }
+                }
+              ]
+            }
+          ],
+          "pods": []
+        }
+      ],
+      "services": [
+        {
+          "id": "astrolabio/service/astrolabio-api",
+          "name": "astrolabio-api",
+          "health": "ok",
+          "targets": [
+            "astrolabio/pod/astrolabio-api-7d586f78-k8vv4"
+          ]
+        },
+        {
+          "id": "astrolabio/service/astrolabio-web",
+          "name": "astrolabio-web",
+          "health": "ok",
+          "targets": [
+            "astrolabio/pod/astrolabio-web-b4bbf56c4-4gx7l",
+            "astrolabio/pod/astrolabio-web-b4bbf56c4-7f8cr"
+          ]
+        }
+      ],
+      "routes": [
+        {
+          "id": "astrolabio/route/astrolabio",
+          "name": "astrolabio",
+          "hostnames": [
+            "astrolabio.fabiancienfuegos.com"
+          ],
+          "health": "ok",
+          "services": [
+            "astrolabio/service/astrolabio-api",
+            "astrolabio/service/astrolabio-web"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cv",
+      "project": "CV",
+      "description": "Mi CV web en React",
+      "repo": "https://github.com/FabianCienC/CV",
+      "argo": {
+        "sync": "Synced",
+        "health": "Healthy"
+      },
+      "health": "ok",
+      "workloads": [
+        {
+          "id": "cv/deployment/cv",
+          "name": "cv",
+          "kind": "Deployment",
+          "description": "Frontend estático con nginx",
+          "role": "frontend",
+          "criticality": "medium",
+          "replicas": {
+            "desired": 2,
+            "ready": 2
+          },
+          "health": "ok",
+          "commit": {
+            "sha": "eb8d8c0f9b206ddecb2dec958c851139503a3ea7",
+            "url": "https://github.com/FabianCienC/CV/commit/eb8d8c0f9b206ddecb2dec958c851139503a3ea7"
+          },
+          "metrics": {
+            "cpu_millicores": 0,
+            "memory_mib": 6
+          },
+          "replica_sets": [
+            {
+              "id": "cv/replicaset/cv-78ff77987",
+              "name": "cv-78ff77987",
+              "replicas": {
+                "desired": 2,
+                "ready": 2
+              },
+              "health": "ok",
+              "pods": [
+                {
+                  "id": "cv/pod/cv-78ff77987-gx9hx",
+                  "name": "cv-78ff77987-gx9hx",
+                  "phase": "Running",
+                  "ready": true,
+                  "restarts": 1,
+                  "node": "worker-1",
+                  "health": "ok",
+                  "metrics": {
+                    "cpu_millicores": 0,
+                    "memory_mib": 3
+                  }
+                },
+                {
+                  "id": "cv/pod/cv-78ff77987-lhggf",
+                  "name": "cv-78ff77987-lhggf",
+                  "phase": "Running",
+                  "ready": true,
+                  "restarts": 1,
+                  "node": "worker-1",
+                  "health": "ok",
+                  "metrics": {
+                    "cpu_millicores": 0,
+                    "memory_mib": 3
+                  }
+                }
+              ]
+            }
+          ],
+          "pods": []
+        }
+      ],
+      "services": [
+        {
+          "id": "cv/service/cv",
+          "name": "cv",
+          "health": "ok",
+          "targets": [
+            "cv/pod/cv-78ff77987-gx9hx",
+            "cv/pod/cv-78ff77987-lhggf"
+          ]
+        }
+      ],
+      "routes": [
+        {
+          "id": "cv/route/cv",
+          "name": "cv",
+          "hostnames": [
+            "cv.fabiancienfuegos.com"
+          ],
+          "health": "ok",
+          "services": [
+            "cv/service/cv"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hola",
+      "project": "Hola",
+      "description": "App de prueba del homelab",
+      "repo": "https://github.com/FabianCienC/hola-homelab",
+      "argo": {
+        "sync": "Synced",
+        "health": "Healthy"
+      },
+      "health": "ok",
+      "workloads": [
+        {
+          "id": "hola/deployment/hola",
+          "name": "hola",
+          "kind": "Deployment",
+          "description": "Página estática servida con nginx",
+          "role": "frontend",
+          "criticality": "low",
+          "replicas": {
+            "desired": 2,
+            "ready": 2
+          },
+          "health": "ok",
+          "commit": {
+            "sha": "91b74663060424c6c3b8485735f291fd53a0d3d3",
+            "url": "https://github.com/FabianCienC/hola-homelab/commit/91b74663060424c6c3b8485735f291fd53a0d3d3"
+          },
+          "metrics": {
+            "cpu_millicores": 0,
+            "memory_mib": 13
+          },
+          "replica_sets": [
+            {
+              "id": "hola/replicaset/hola-7cddc9f88c",
+              "name": "hola-7cddc9f88c",
+              "replicas": {
+                "desired": 2,
+                "ready": 2
+              },
+              "health": "ok",
+              "pods": [
+                {
+                  "id": "hola/pod/hola-7cddc9f88c-9dt52",
+                  "name": "hola-7cddc9f88c-9dt52",
+                  "phase": "Running",
+                  "ready": true,
+                  "restarts": 0,
+                  "node": "worker-2",
+                  "health": "ok",
+                  "metrics": {
+                    "cpu_millicores": 0,
+                    "memory_mib": 10
+                  }
+                },
+                {
+                  "id": "hola/pod/hola-7cddc9f88c-gq484",
+                  "name": "hola-7cddc9f88c-gq484",
+                  "phase": "Running",
+                  "ready": true,
+                  "restarts": 0,
+                  "node": "worker-1",
+                  "health": "ok",
+                  "metrics": {
+                    "cpu_millicores": 0,
+                    "memory_mib": 3
+                  }
+                }
+              ]
+            }
+          ],
+          "pods": []
+        }
+      ],
+      "services": [
+        {
+          "id": "hola/service/hola",
+          "name": "hola",
+          "health": "ok",
+          "targets": [
+            "hola/pod/hola-7cddc9f88c-9dt52",
+            "hola/pod/hola-7cddc9f88c-gq484"
+          ]
+        }
+      ],
+      "routes": [
+        {
+          "id": "hola/route/hola",
+          "name": "hola",
+          "hostnames": [
+            "hola.fabiancienfuegos.com"
+          ],
+          "health": "ok",
+          "services": [
+            "hola/service/hola"
+          ]
+        }
+      ]
+    }
+  ],
+  "core": {
+    "components": [
+      {
+        "id": "kube-apiserver",
+        "name": "API server",
+        "purpose": "Punto de entrada al clúster: toda lectura y escritura pasa por aquí",
+        "category": "control",
+        "system": "Kubernetes",
+        "replicas": {
+          "desired": 1,
+          "ready": 1
+        },
+        "health": "ok",
+        "argo": null,
+        "metrics": {
+          "cpu_millicores": 50,
+          "memory_mib": 731
+        },
+        "pods": [
+          {
+            "id": "core/kube-apiserver/pod-1",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 2,
+            "node": "control-plane",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 50,
+              "memory_mib": 731
+            }
+          }
+        ],
+        "services": [
+          {
+            "id": "core/kube-apiserver/service-1",
+            "name": null,
+            "health": "ok",
+            "targets": [
+              "core/kube-apiserver/pod-1"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "etcd",
+        "name": "etcd",
+        "purpose": "Base de datos con el estado del clúster",
+        "category": "control",
+        "system": "Kubernetes",
+        "replicas": {
+          "desired": 1,
+          "ready": 1
+        },
+        "health": "ok",
+        "argo": null,
+        "metrics": {
+          "cpu_millicores": 18,
+          "memory_mib": 76
+        },
+        "pods": [
+          {
+            "id": "core/etcd/pod-1",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 4,
+            "node": "control-plane",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 18,
+              "memory_mib": 76
+            }
+          }
+        ],
+        "services": []
+      },
+      {
+        "id": "kube-controller-manager",
+        "name": "Controller manager",
+        "purpose": "Lleva el estado real hacia el deseado (réplicas, nodos, endpoints)",
+        "category": "control",
+        "system": "Kubernetes",
+        "replicas": {
+          "desired": 1,
+          "ready": 1
+        },
+        "health": "ok",
+        "argo": null,
+        "metrics": {
+          "cpu_millicores": 10,
+          "memory_mib": 86
+        },
+        "pods": [
+          {
+            "id": "core/kube-controller-manager/pod-1",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 5,
+            "node": "control-plane",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 10,
+              "memory_mib": 86
+            }
+          }
+        ],
+        "services": []
+      },
+      {
+        "id": "kube-scheduler",
+        "name": "Scheduler",
+        "purpose": "Decide en qué nodo corre cada pod",
+        "category": "control",
+        "system": "Kubernetes",
+        "replicas": {
+          "desired": 1,
+          "ready": 1
+        },
+        "health": "ok",
+        "argo": null,
+        "metrics": {
+          "cpu_millicores": 6,
+          "memory_mib": 44
+        },
+        "pods": [
+          {
+            "id": "core/kube-scheduler/pod-1",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 5,
+            "node": "control-plane",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 6,
+              "memory_mib": 44
+            }
+          }
+        ],
+        "services": []
+      },
+      {
+        "id": "coredns",
+        "name": "CoreDNS",
+        "purpose": "DNS interno: resuelve los nombres de los Services",
+        "category": "network",
+        "system": "Kubernetes",
+        "replicas": {
+          "desired": 2,
+          "ready": 2
+        },
+        "health": "ok",
+        "argo": null,
+        "metrics": {
+          "cpu_millicores": 2,
+          "memory_mib": 67
+        },
+        "pods": [
+          {
+            "id": "core/coredns/pod-1",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 4,
+            "node": "control-plane",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 1,
+              "memory_mib": 23
+            }
+          },
+          {
+            "id": "core/coredns/pod-2",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 4,
+            "node": "control-plane",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 1,
+              "memory_mib": 44
+            }
+          }
+        ],
+        "services": [
+          {
+            "id": "core/coredns/service-1",
+            "name": null,
+            "health": "ok",
+            "targets": [
+              "core/coredns/pod-1",
+              "core/coredns/pod-2"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "kube-proxy",
+        "name": "kube-proxy",
+        "purpose": "Traduce Services a reglas de red en cada nodo",
+        "category": "network",
+        "system": "Kubernetes",
+        "replicas": {
+          "desired": 3,
+          "ready": 3
+        },
+        "health": "ok",
+        "argo": null,
+        "metrics": {
+          "cpu_millicores": 0,
+          "memory_mib": 134
+        },
+        "pods": [
+          {
+            "id": "core/kube-proxy/pod-1",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 5,
+            "node": "worker-1",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 0,
+              "memory_mib": 57
+            }
+          },
+          {
+            "id": "core/kube-proxy/pod-2",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 4,
+            "node": "control-plane",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 0,
+              "memory_mib": 19
+            }
+          },
+          {
+            "id": "core/kube-proxy/pod-3",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 5,
+            "node": "worker-2",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 0,
+              "memory_mib": 58
+            }
+          }
+        ],
+        "services": []
+      },
+      {
+        "id": "tigera-operator",
+        "name": "Tigera operator",
+        "purpose": "Instala y actualiza Calico",
+        "category": "network",
+        "system": "Calico",
+        "replicas": {
+          "desired": 1,
+          "ready": 1
+        },
+        "health": "ok",
+        "argo": null,
+        "metrics": {
+          "cpu_millicores": 2,
+          "memory_mib": 125
+        },
+        "pods": [
+          {
+            "id": "core/tigera-operator/pod-1",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 5,
+            "node": "control-plane",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 2,
+              "memory_mib": 125
+            }
+          }
+        ],
+        "services": []
+      },
+      {
+        "id": "calico-node",
+        "name": "Calico node",
+        "purpose": "Red de pods y NetworkPolicies en cada nodo",
+        "category": "network",
+        "system": "Calico",
+        "replicas": {
+          "desired": 3,
+          "ready": 3
+        },
+        "health": "ok",
+        "argo": null,
+        "metrics": {
+          "cpu_millicores": 67,
+          "memory_mib": 327
+        },
+        "pods": [
+          {
+            "id": "core/calico-node/pod-1",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 5,
+            "node": "worker-2",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 26,
+              "memory_mib": 104
+            }
+          },
+          {
+            "id": "core/calico-node/pod-2",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 4,
+            "node": "control-plane",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 20,
+              "memory_mib": 117
+            }
+          },
+          {
+            "id": "core/calico-node/pod-3",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 5,
+            "node": "worker-1",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 21,
+              "memory_mib": 106
+            }
+          }
+        ],
+        "services": []
+      },
+      {
+        "id": "calico-typha",
+        "name": "Calico Typha",
+        "purpose": "Reparte los cambios de red a los nodos sin saturar el API server",
+        "category": "network",
+        "system": "Calico",
+        "replicas": {
+          "desired": 2,
+          "ready": 2
+        },
+        "health": "ok",
+        "argo": null,
+        "metrics": {
+          "cpu_millicores": 3,
+          "memory_mib": 112
+        },
+        "pods": [
+          {
+            "id": "core/calico-typha/pod-1",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 1,
+            "node": "worker-2",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 2,
+              "memory_mib": 77
+            }
+          },
+          {
+            "id": "core/calico-typha/pod-2",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 4,
+            "node": "control-plane",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 1,
+              "memory_mib": 35
+            }
+          }
+        ],
+        "services": [
+          {
+            "id": "core/calico-typha/service-1",
+            "name": null,
+            "health": "ok",
+            "targets": [
+              "core/calico-typha/pod-1",
+              "core/calico-typha/pod-2"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "calico-kube-controllers",
+        "name": "Calico controllers",
+        "purpose": "Sincroniza Calico con los objetos de Kubernetes",
+        "category": "network",
+        "system": "Calico",
+        "replicas": {
+          "desired": 1,
+          "ready": 1
+        },
+        "health": "ok",
+        "argo": null,
+        "metrics": {
+          "cpu_millicores": 4,
+          "memory_mib": 59
+        },
+        "pods": [
+          {
+            "id": "core/calico-kube-controllers/pod-1",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 4,
+            "node": "control-plane",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 4,
+              "memory_mib": 59
+            }
+          }
+        ],
+        "services": [
+          {
+            "id": "core/calico-kube-controllers/service-1",
+            "name": null,
+            "health": "ok",
+            "targets": [
+              "core/calico-kube-controllers/pod-1"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "calico-apiserver",
+        "name": "Calico API server",
+        "purpose": "API de los recursos de Calico",
+        "category": "network",
+        "system": "Calico",
+        "replicas": {
+          "desired": 2,
+          "ready": 2
+        },
+        "health": "ok",
+        "argo": null,
+        "metrics": {
+          "cpu_millicores": 3,
+          "memory_mib": 146
+        },
+        "pods": [
+          {
+            "id": "core/calico-apiserver/pod-1",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 4,
+            "node": "control-plane",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 2,
+              "memory_mib": 89
+            }
+          },
+          {
+            "id": "core/calico-apiserver/pod-2",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 4,
+            "node": "control-plane",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 1,
+              "memory_mib": 57
+            }
+          }
+        ],
+        "services": [
+          {
+            "id": "core/calico-apiserver/service-1",
+            "name": null,
+            "health": "ok",
+            "targets": [
+              "core/calico-apiserver/pod-1",
+              "core/calico-apiserver/pod-2"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "calico-csi",
+        "name": "Calico CSI",
+        "purpose": "Driver de volúmenes de Calico en cada nodo",
+        "category": "network",
+        "system": "Calico",
+        "replicas": {
+          "desired": 3,
+          "ready": 3
+        },
+        "health": "ok",
+        "argo": null,
+        "metrics": {
+          "cpu_millicores": 0,
+          "memory_mib": 78
+        },
+        "pods": [
+          {
+            "id": "core/calico-csi/pod-1",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 10,
+            "node": "worker-2",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 0,
+              "memory_mib": 35
+            }
+          },
+          {
+            "id": "core/calico-csi/pod-2",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 10,
+            "node": "worker-1",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 0,
+              "memory_mib": 35
+            }
+          },
+          {
+            "id": "core/calico-csi/pod-3",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 8,
+            "node": "control-plane",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 0,
+              "memory_mib": 8
+            }
+          }
+        ],
+        "services": []
+      },
+      {
+        "id": "goldmane",
+        "name": "Goldmane",
+        "purpose": "Agrega los flujos de red que ve Calico",
+        "category": "network",
+        "system": "Calico",
+        "replicas": {
+          "desired": 1,
+          "ready": 1
+        },
+        "health": "ok",
+        "argo": null,
+        "metrics": {
+          "cpu_millicores": 4,
+          "memory_mib": 27
+        },
+        "pods": [
+          {
+            "id": "core/goldmane/pod-1",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 4,
+            "node": "control-plane",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 4,
+              "memory_mib": 27
+            }
+          }
+        ],
+        "services": [
+          {
+            "id": "core/goldmane/service-1",
+            "name": null,
+            "health": "ok",
+            "targets": [
+              "core/goldmane/pod-1"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "whisker",
+        "name": "Whisker",
+        "purpose": "Consola para observar los flujos de red de Calico",
+        "category": "network",
+        "system": "Calico",
+        "replicas": {
+          "desired": 1,
+          "ready": 1
+        },
+        "health": "ok",
+        "argo": null,
+        "metrics": {
+          "cpu_millicores": 0,
+          "memory_mib": 11
+        },
+        "pods": [
+          {
+            "id": "core/whisker/pod-1",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 8,
+            "node": "control-plane",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 0,
+              "memory_mib": 11
+            }
+          }
+        ],
+        "services": [
+          {
+            "id": "core/whisker/service-1",
+            "name": null,
+            "health": "ok",
+            "targets": [
+              "core/whisker/pod-1"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "argocd-server",
+        "name": "Argo CD server",
+        "purpose": "API e interfaz web de Argo CD",
+        "category": "gitops",
+        "system": "Argo CD",
+        "replicas": {
+          "desired": 1,
+          "ready": 1
+        },
+        "health": "ok",
+        "argo": null,
+        "metrics": {
+          "cpu_millicores": 1,
+          "memory_mib": 28
+        },
+        "pods": [
+          {
+            "id": "core/argocd-server/pod-1",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 1,
+            "node": "worker-1",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 1,
+              "memory_mib": 28
+            }
+          }
+        ],
+        "services": [
+          {
+            "id": "core/argocd-server/service-1",
+            "name": null,
+            "health": "ok",
+            "targets": [
+              "core/argocd-server/pod-1"
+            ]
+          },
+          {
+            "id": "core/argocd-server/service-2",
+            "name": null,
+            "health": "ok",
+            "targets": [
+              "core/argocd-server/pod-1"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "argocd-repo-server",
+        "name": "Repo server",
+        "purpose": "Clona los repos de Git y genera los manifiestos",
+        "category": "gitops",
+        "system": "Argo CD",
+        "replicas": {
+          "desired": 1,
+          "ready": 1
+        },
+        "health": "ok",
+        "argo": null,
+        "metrics": {
+          "cpu_millicores": 1,
+          "memory_mib": 109
+        },
+        "pods": [
+          {
+            "id": "core/argocd-repo-server/pod-1",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 1,
+            "node": "worker-1",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 1,
+              "memory_mib": 109
+            }
+          }
+        ],
+        "services": [
+          {
+            "id": "core/argocd-repo-server/service-1",
+            "name": null,
+            "health": "ok",
+            "targets": [
+              "core/argocd-repo-server/pod-1"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "argocd-application-controller",
+        "name": "Application controller",
+        "purpose": "Compara Git con el clúster y sincroniza las diferencias",
+        "category": "gitops",
+        "system": "Argo CD",
+        "replicas": {
+          "desired": 1,
+          "ready": 1
+        },
+        "health": "ok",
+        "argo": null,
+        "metrics": {
+          "cpu_millicores": 6,
+          "memory_mib": 158
+        },
+        "pods": [
+          {
+            "id": "core/argocd-application-controller/pod-1",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 1,
+            "node": "worker-1",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 6,
+              "memory_mib": 158
+            }
+          }
+        ],
+        "services": [
+          {
+            "id": "core/argocd-application-controller/service-1",
+            "name": null,
+            "health": "ok",
+            "targets": [
+              "core/argocd-application-controller/pod-1"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "argocd-applicationset-controller",
+        "name": "ApplicationSet controller",
+        "purpose": "Genera Applications a partir de plantillas",
+        "category": "gitops",
+        "system": "Argo CD",
+        "replicas": {
+          "desired": 1,
+          "ready": 1
+        },
+        "health": "ok",
+        "argo": null,
+        "metrics": {
+          "cpu_millicores": 0,
+          "memory_mib": 22
+        },
+        "pods": [
+          {
+            "id": "core/argocd-applicationset-controller/pod-1",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 1,
+            "node": "worker-1",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 0,
+              "memory_mib": 22
+            }
+          }
+        ],
+        "services": [
+          {
+            "id": "core/argocd-applicationset-controller/service-1",
+            "name": null,
+            "health": "ok",
+            "targets": [
+              "core/argocd-applicationset-controller/pod-1"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "argocd-notifications-controller",
+        "name": "Notifications controller",
+        "purpose": "Envía avisos de los eventos de Argo CD",
+        "category": "gitops",
+        "system": "Argo CD",
+        "replicas": {
+          "desired": 1,
+          "ready": 1
+        },
+        "health": "ok",
+        "argo": null,
+        "metrics": {
+          "cpu_millicores": 0,
+          "memory_mib": 21
+        },
+        "pods": [
+          {
+            "id": "core/argocd-notifications-controller/pod-1",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 1,
+            "node": "worker-1",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 0,
+              "memory_mib": 21
+            }
+          }
+        ],
+        "services": [
+          {
+            "id": "core/argocd-notifications-controller/service-1",
+            "name": null,
+            "health": "ok",
+            "targets": [
+              "core/argocd-notifications-controller/pod-1"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "argocd-dex-server",
+        "name": "Dex",
+        "purpose": "Inicio de sesión (SSO) de Argo CD",
+        "category": "gitops",
+        "system": "Argo CD",
+        "replicas": {
+          "desired": 1,
+          "ready": 1
+        },
+        "health": "ok",
+        "argo": null,
+        "metrics": {
+          "cpu_millicores": 0,
+          "memory_mib": 111
+        },
+        "pods": [
+          {
+            "id": "core/argocd-dex-server/pod-1",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 1,
+            "node": "worker-1",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 0,
+              "memory_mib": 111
+            }
+          }
+        ],
+        "services": [
+          {
+            "id": "core/argocd-dex-server/service-1",
+            "name": null,
+            "health": "ok",
+            "targets": [
+              "core/argocd-dex-server/pod-1"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "argocd-redis",
+        "name": "Redis",
+        "purpose": "Caché de Argo CD",
+        "category": "gitops",
+        "system": "Argo CD",
+        "replicas": {
+          "desired": 1,
+          "ready": 1
+        },
+        "health": "ok",
+        "argo": null,
+        "metrics": {
+          "cpu_millicores": 4,
+          "memory_mib": 30
+        },
+        "pods": [
+          {
+            "id": "core/argocd-redis/pod-1",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 1,
+            "node": "worker-1",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 4,
+              "memory_mib": 30
+            }
+          }
+        ],
+        "services": [
+          {
+            "id": "core/argocd-redis/service-1",
+            "name": null,
+            "health": "ok",
+            "targets": [
+              "core/argocd-redis/pod-1"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "traefik",
+        "name": "Traefik",
+        "purpose": "Gateway API: enruta el tráfico de entrada a cada app",
+        "category": "ingress",
+        "system": "Traefik",
+        "replicas": {
+          "desired": 1,
+          "ready": 1
+        },
+        "health": "ok",
+        "argo": {
+          "sync": "Synced",
+          "health": "Healthy"
+        },
+        "metrics": {
+          "cpu_millicores": 0,
+          "memory_mib": 126
+        },
+        "pods": [
+          {
+            "id": "core/traefik/pod-1",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 1,
+            "node": "worker-1",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 0,
+              "memory_mib": 126
+            }
+          }
+        ],
+        "services": [
+          {
+            "id": "core/traefik/service-1",
+            "name": null,
+            "health": "ok",
+            "targets": [
+              "core/traefik/pod-1"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "cloudflared",
+        "name": "Cloudflare Tunnel",
+        "purpose": "Publica el clúster en internet sin abrir puertos",
+        "category": "ingress",
+        "system": "Cloudflare",
+        "replicas": {
+          "desired": 2,
+          "ready": 2
+        },
+        "health": "ok",
+        "argo": {
+          "sync": "Synced",
+          "health": "Healthy"
+        },
+        "metrics": {
+          "cpu_millicores": 4,
+          "memory_mib": 55
+        },
+        "pods": [
+          {
+            "id": "core/cloudflared/pod-1",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 1,
+            "node": "worker-1",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 2,
+              "memory_mib": 16
+            }
+          },
+          {
+            "id": "core/cloudflared/pod-2",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 1,
+            "node": "worker-1",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 2,
+              "memory_mib": 39
+            }
+          }
+        ],
+        "services": []
+      },
+      {
+        "id": "sealed-secrets",
+        "name": "Sealed Secrets",
+        "purpose": "Descifra en el clúster los secretos que viven cifrados en Git",
+        "category": "security",
+        "system": "Sealed Secrets",
+        "replicas": {
+          "desired": 1,
+          "ready": 1
+        },
+        "health": "ok",
+        "argo": {
+          "sync": "Synced",
+          "health": "Healthy"
+        },
+        "metrics": {
+          "cpu_millicores": 0,
+          "memory_mib": 50
+        },
+        "pods": [
+          {
+            "id": "core/sealed-secrets/pod-1",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 1,
+            "node": "worker-1",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 0,
+              "memory_mib": 50
+            }
+          }
+        ],
+        "services": [
+          {
+            "id": "core/sealed-secrets/service-1",
+            "name": null,
+            "health": "ok",
+            "targets": [
+              "core/sealed-secrets/pod-1"
+            ]
+          },
+          {
+            "id": "core/sealed-secrets/service-2",
+            "name": null,
+            "health": "ok",
+            "targets": [
+              "core/sealed-secrets/pod-1"
+            ]
+          }
+        ]
+      }
+    ],
+    "nodes": [
+      {
+        "id": "control-plane",
+        "name": "control plane",
+        "role": "control-plane",
+        "health": "ok",
+        "pods": 16,
+        "metrics": {
+          "cpu_millicores": 142,
+          "memory_mib": 1869
+        }
+      },
+      {
+        "id": "worker-1",
+        "name": "worker 1",
+        "role": "worker",
+        "health": "ok",
+        "pods": 17,
+        "metrics": {
+          "cpu_millicores": 87,
+          "memory_mib": 1660
+        }
+      },
+      {
+        "id": "worker-2",
+        "name": "worker 2",
+        "role": "worker",
+        "health": "ok",
+        "pods": 8,
+        "metrics": {
+          "cpu_millicores": 54,
+          "memory_mib": 985
+        }
+      }
+    ]
+  }
+}

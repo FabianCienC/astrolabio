@@ -14,7 +14,8 @@ API (run from `api/`):
 uv sync
 uv run pytest                       # all tests; one: uv run pytest tests/contract/test_models.py::test_example_is_valid_and_ids_are_unique
 uv run ruff check . && uv run ruff format --check .
-uv run export-contract              # regenerate ../contract/ after changing contract/models.py or contract/example.py
+uv run snapshot-example             # refresh the example from the live site (contract/snapshot.json)
+uv run export-contract              # regenerate ../contract/ after changing contract/models.py or the snapshot
 ASTROLABIO_ENV=development uv run uvicorn astrolabio_api.main:app --reload                           # live cluster (kubeconfig)
 ASTROLABIO_ENV=development ASTROLABIO_SOURCE=example uv run uvicorn astrolabio_api.main:app --reload  # example galaxy, no cluster
 ```
@@ -29,7 +30,7 @@ npm run build
 npm run gen:contract                # regenerate src/contract/galaxy.ts after re-exporting the contract
 ```
 
-The public contract of `GET /api/galaxy` is `api/src/astrolabio_api/contract/models.py` (Pydantic, `extra="forbid"`). `contract/galaxy.schema.json` and `contract/galaxy.example.json` are generated from it and committed (`contract/example.py` is a hand-made, sanitized snapshot of the real cluster taken 2026-10-21, not invented data; keep it faithful when the cluster changes); the web generates its TS types from the schema. Change the models first, then `uv run export-contract`, then `npm run gen:contract`.
+The public contract of `GET /api/galaxy` is `api/src/astrolabio_api/contract/models.py` (Pydantic, `extra="forbid"`). `contract/galaxy.schema.json` and `contract/galaxy.example.json` are generated from it and committed (`contract/example.py` loads `contract/snapshot.json`, what the live site served, already sanitized; refresh it with `uv run snapshot-example` when the cluster changes, never invent data); the web generates its TS types from the schema. Change the models first, then `uv run export-contract`, then `npm run gen:contract`.
 
 ## Language and workflow
 

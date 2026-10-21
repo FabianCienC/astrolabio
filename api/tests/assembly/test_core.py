@@ -50,16 +50,23 @@ def _platform_snapshot() -> dict:
     return s
 
 
-def test_catalog_matches_the_example_snapshot():
-    # The example is a real snapshot, so both must describe the same components.
-    catalog = [
-        (e.id, e.name, e.purpose, e.category, e.system, e.application is not None) for e in CATALOG
-    ]
-    example = [
-        (c.id, c.name, c.purpose, c.category, c.system, c.argo is not None)
-        for c in example_galaxy().core.components
-    ]
-    assert catalog == example
+def test_example_components_match_the_catalog():
+    # The example is a real snapshot: each of its components must be its catalog entry,
+    # in catalog order. The catalog may list more (absent when the snapshot was taken).
+    entries = {e.id: e for e in CATALOG}
+    order = list(entries)
+    components = example_galaxy().core.components
+    for c in components:
+        e = entries.get(c.id)
+        assert e, f"{c.id} is not in the catalog"
+        assert (c.name, c.purpose, c.category, c.system, c.argo is not None) == (
+            e.name,
+            e.purpose,
+            e.category,
+            e.system,
+            e.application is not None,
+        ), c.id
+    assert [c.id for c in components] == sorted((c.id for c in components), key=order.index)
 
 
 def test_only_catalog_components_present_in_the_cluster_are_published():

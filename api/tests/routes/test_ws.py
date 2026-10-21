@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 
 from astrolabio_api.config import PUBLIC_ORIGIN, Settings
+from astrolabio_api.contract.example import example_galaxy
 from astrolabio_api.contract.models import Galaxy
 from astrolabio_api.main import create_app
 
@@ -16,7 +17,7 @@ def test_sends_the_galaxy_on_connect():
     client = TestClient(create_app(PRODUCTION))
     with client.websocket_connect("/ws", headers={"origin": PUBLIC_ORIGIN}) as ws:
         galaxy = Galaxy.model_validate_json(ws.receive_text())
-    assert [c.id for c in galaxy.constellations] == ["hola", "cv", "astrolabio"]
+    assert [c.id for c in galaxy.constellations] == [c.id for c in example_galaxy().constellations]
 
 
 @pytest.mark.parametrize("origin", [None, "https://evil.example", "http://localhost:5173"])

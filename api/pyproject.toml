@@ -15,6 +15,7 @@ dependencies = [
 
 [project.scripts]
 export-contract = "astrolabio_api.contract.export:main"
+snapshot-example = "astrolabio_api.contract.snapshot:main"
 
 [build-system]
 requires = ["uv_build>=0.11.22,<0.12.0"]

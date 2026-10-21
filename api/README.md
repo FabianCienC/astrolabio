@@ -8,7 +8,8 @@ Reads the Kubernetes cluster live and serves it, sanitized, as a galaxy.
 uv sync                                   # install deps from uv.lock
 uv run pytest                             # tests
 uv run ruff check . && uv run ruff format --check .
-uv run export-contract                    # regenerate ../contract/ after changing the contract
+uv run snapshot-example                   # refresh the example from the live site
+uv run export-contract                    # regenerate ../contract/ after changing the contract or the snapshot
 ASTROLABIO_ENV=development uv run uvicorn astrolabio_api.main:app --reload                           # live cluster (kubeconfig)
 ASTROLABIO_ENV=development ASTROLABIO_SOURCE=example uv run uvicorn astrolabio_api.main:app --reload  # example galaxy, no cluster
 ```
@@ -40,7 +41,8 @@ Kubernetes API ──► kube/ ──► assembly/ ──► contract/ ──►
 | `config.py` | Every environment variable the API reads (`ASTROLABIO_ENV`, `ASTROLABIO_SOURCE=cluster\|example`) and the origins allowed on `/ws`. | done |
 | `contract/` | The public shape of the data. **Nothing leaves the API without passing through these models.** | done |
 | `contract/models.py` | Pydantic models of `GET /api/galaxy`, `extra="forbid"`, public-repo validators. | done |
-| `contract/example.py` | Example galaxy covering every state; web fixture and temporary data source. | done |
+| `contract/example.py` | Example galaxy: loads `snapshot.json`, a snapshot of what the live site served (already sanitized). Web fixture, `ASTROLABIO_SOURCE=example` and tests. | done |
+| `contract/snapshot.py` | `snapshot-example` CLI: refreshes `snapshot.json` from the live `GET /api/galaxy` (or `--url`). | done |
 | `contract/export.py` | `export-contract` CLI: writes JSON Schema + example to `../contract/`. | done |
 | `routes/` | Thin HTTP layer, one module per endpoint group. GET only. | done |
 | `routes/galaxy.py` | `GET /api/galaxy`: assembles the informers' snapshot (503 until they sync), or serves the example with `ASTROLABIO_SOURCE=example`. | done |

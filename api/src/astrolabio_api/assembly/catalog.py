@@ -98,6 +98,17 @@ CATALOG: tuple[Entry, ...] = (
         "DaemonSet",
         "kube-proxy",
     ),
+    Entry(
+        "metrics-server",
+        "Metrics Server",
+        "Mide CPU y memoria de pods y nodos: lo que hace brillar a cada estrella",
+        "control",
+        _K8S,
+        "kube-system",
+        "Deployment",
+        "metrics-server",
+        application="metrics-server",
+    ),
     # Calico, installed and kept up to date by the Tigera operator.
     Entry(
         "tigera-operator",

@@ -45,7 +45,7 @@ async def test_subscriber_starts_with_the_current_galaxy():
     cluster = Cluster()
     queue = Broadcaster(cluster.snapshot, cluster.changed).subscribe()
     assert queue is not None
-    assert _projects(queue.get_nowait()) == ["hola", "cv", "astrolabio"]
+    assert _projects(queue.get_nowait()) == [c.id for c in example_galaxy().constellations]
 
 
 async def test_nothing_before_the_cache_syncs():
@@ -69,7 +69,7 @@ async def test_pushes_real_changes_and_skips_noise():
         # A project disappears: everyone gets the new galaxy.
         cluster.touch(constellations=cluster.galaxy.constellations[:1])
         await _round(broadcaster)
-        assert _projects(queue.get_nowait()) == ["hola"]
+        assert _projects(queue.get_nowait()) == [example_galaxy().constellations[0].id]
     finally:
         task.cancel()
 
@@ -85,7 +85,7 @@ async def test_slow_client_gets_the_newest_galaxy_not_a_backlog():
         cluster.touch(constellations=cluster.galaxy.constellations[:1])
         await _round(broadcaster)
         assert queue.qsize() == 1
-        assert _projects(queue.get_nowait()) == ["hola"]
+        assert _projects(queue.get_nowait()) == [example_galaxy().constellations[0].id]
     finally:
         task.cancel()
 
