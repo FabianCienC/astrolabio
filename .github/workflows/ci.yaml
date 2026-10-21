@@ -109,6 +109,7 @@ jobs:
           # Fails loudly if the image entry is missing, instead of silently not deploying.
           yq -e '.images[] | select(.name == "astrolabio-api")' "$file" > /dev/null
           yq -i '(.images[] | select(.name == "astrolabio-api")).newTag = strenv(GITHUB_SHA)' "$file"
+          if git diff --quiet; then echo "already at ${GITHUB_SHA::7}"; exit 0; fi  # a re-run
           git config user.name "astrolabio-ci"
           git config user.email "astrolabio-ci@users.noreply.github.com"
           git commit -am "astrolabio-api: imagen ${GITHUB_SHA::7}"
