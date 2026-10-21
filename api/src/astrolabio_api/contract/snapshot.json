@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "generated_at": "2026-10-21T19:53:22.107122Z",
+  "generated_at": "2026-10-21T19:59:10.002622Z",
   "constellations": [
     {
       "id": "astrolabio",
@@ -26,17 +26,17 @@
           },
           "health": "ok",
           "commit": {
-            "sha": "678873b2d61a2759debf9980add1cfd780b01633",
-            "url": "https://github.com/FabianCienC/astrolabio/commit/678873b2d61a2759debf9980add1cfd780b01633"
+            "sha": "76d83da73c6087ddd71a24da92ca0ee952f598fb",
+            "url": "https://github.com/FabianCienC/astrolabio/commit/76d83da73c6087ddd71a24da92ca0ee952f598fb"
           },
           "metrics": {
-            "cpu_millicores": 2,
-            "memory_mib": 89
+            "cpu_millicores": null,
+            "memory_mib": null
           },
           "replica_sets": [
             {
-              "id": "astrolabio/replicaset/astrolabio-api-7d586f78",
-              "name": "astrolabio-api-7d586f78",
+              "id": "astrolabio/replicaset/astrolabio-api-7f9654d4f8",
+              "name": "astrolabio-api-7f9654d4f8",
               "replicas": {
                 "desired": 1,
                 "ready": 1
@@ -44,16 +44,16 @@
               "health": "ok",
               "pods": [
                 {
-                  "id": "astrolabio/pod/astrolabio-api-7d586f78-k8vv4",
-                  "name": "astrolabio-api-7d586f78-k8vv4",
+                  "id": "astrolabio/pod/astrolabio-api-7f9654d4f8-wlv2z",
+                  "name": "astrolabio-api-7f9654d4f8-wlv2z",
                   "phase": "Running",
                   "ready": true,
                   "restarts": 0,
                   "node": "worker-2",
                   "health": "ok",
                   "metrics": {
-                    "cpu_millicores": 2,
-                    "memory_mib": 89
+                    "cpu_millicores": null,
+                    "memory_mib": null
                   }
                 }
               ]
@@ -74,17 +74,17 @@
           },
           "health": "ok",
           "commit": {
-            "sha": "8c2732f8fe3efe6260285e3aaa326649c2e71b05",
-            "url": "https://github.com/FabianCienC/astrolabio/commit/8c2732f8fe3efe6260285e3aaa326649c2e71b05"
+            "sha": "76d83da73c6087ddd71a24da92ca0ee952f598fb",
+            "url": "https://github.com/FabianCienC/astrolabio/commit/76d83da73c6087ddd71a24da92ca0ee952f598fb"
           },
           "metrics": {
-            "cpu_millicores": 0,
-            "memory_mib": 6
+            "cpu_millicores": null,
+            "memory_mib": null
           },
           "replica_sets": [
             {
-              "id": "astrolabio/replicaset/astrolabio-web-b4bbf56c4",
-              "name": "astrolabio-web-b4bbf56c4",
+              "id": "astrolabio/replicaset/astrolabio-web-848cdc9c48",
+              "name": "astrolabio-web-848cdc9c48",
               "replicas": {
                 "desired": 2,
                 "ready": 2
@@ -92,29 +92,29 @@
               "health": "ok",
               "pods": [
                 {
-                  "id": "astrolabio/pod/astrolabio-web-b4bbf56c4-4gx7l",
-                  "name": "astrolabio-web-b4bbf56c4-4gx7l",
+                  "id": "astrolabio/pod/astrolabio-web-848cdc9c48-5vtpj",
+                  "name": "astrolabio-web-848cdc9c48-5vtpj",
                   "phase": "Running",
                   "ready": true,
                   "restarts": 0,
                   "node": "worker-2",
                   "health": "ok",
                   "metrics": {
-                    "cpu_millicores": 0,
-                    "memory_mib": 3
+                    "cpu_millicores": null,
+                    "memory_mib": null
                   }
                 },
                 {
-                  "id": "astrolabio/pod/astrolabio-web-b4bbf56c4-7f8cr",
-                  "name": "astrolabio-web-b4bbf56c4-7f8cr",
+                  "id": "astrolabio/pod/astrolabio-web-848cdc9c48-qfqpr",
+                  "name": "astrolabio-web-848cdc9c48-qfqpr",
                   "phase": "Running",
                   "ready": true,
                   "restarts": 0,
                   "node": "worker-2",
                   "health": "ok",
                   "metrics": {
-                    "cpu_millicores": 0,
-                    "memory_mib": 3
+                    "cpu_millicores": null,
+                    "memory_mib": null
                   }
                 }
               ]
@@ -129,7 +129,7 @@
           "name": "astrolabio-api",
           "health": "ok",
           "targets": [
-            "astrolabio/pod/astrolabio-api-7d586f78-k8vv4"
+            "astrolabio/pod/astrolabio-api-7f9654d4f8-wlv2z"
           ]
         },
         {
@@ -137,8 +137,8 @@
           "name": "astrolabio-web",
           "health": "ok",
           "targets": [
-            "astrolabio/pod/astrolabio-web-b4bbf56c4-4gx7l",
-            "astrolabio/pod/astrolabio-web-b4bbf56c4-7f8cr"
+            "astrolabio/pod/astrolabio-web-848cdc9c48-5vtpj",
+            "astrolabio/pod/astrolabio-web-848cdc9c48-qfqpr"
           ]
         }
       ],
@@ -369,8 +369,8 @@
         "health": "ok",
         "argo": null,
         "metrics": {
-          "cpu_millicores": 50,
-          "memory_mib": 731
+          "cpu_millicores": 68,
+          "memory_mib": 774
         },
         "pods": [
           {
@@ -382,8 +382,8 @@
             "node": "control-plane",
             "health": "ok",
             "metrics": {
-              "cpu_millicores": 50,
-              "memory_mib": 731
+              "cpu_millicores": 68,
+              "memory_mib": 774
             }
           }
         ],
@@ -411,8 +411,8 @@
         "health": "ok",
         "argo": null,
         "metrics": {
-          "cpu_millicores": 18,
-          "memory_mib": 76
+          "cpu_millicores": 33,
+          "memory_mib": 73
         },
         "pods": [
           {
@@ -424,8 +424,8 @@
             "node": "control-plane",
             "health": "ok",
             "metrics": {
-              "cpu_millicores": 18,
-              "memory_mib": 76
+              "cpu_millicores": 33,
+              "memory_mib": 73
             }
           }
         ],
@@ -444,8 +444,8 @@
         "health": "ok",
         "argo": null,
         "metrics": {
-          "cpu_millicores": 10,
-          "memory_mib": 86
+          "cpu_millicores": 13,
+          "memory_mib": 90
         },
         "pods": [
           {
@@ -457,8 +457,8 @@
             "node": "control-plane",
             "health": "ok",
             "metrics": {
-              "cpu_millicores": 10,
-              "memory_mib": 86
+              "cpu_millicores": 13,
+              "memory_mib": 90
             }
           }
         ],
@@ -477,7 +477,7 @@
         "health": "ok",
         "argo": null,
         "metrics": {
-          "cpu_millicores": 6,
+          "cpu_millicores": 7,
           "memory_mib": 44
         },
         "pods": [
@@ -490,7 +490,7 @@
             "node": "control-plane",
             "health": "ok",
             "metrics": {
-              "cpu_millicores": 6,
+              "cpu_millicores": 7,
               "memory_mib": 44
             }
           }
@@ -510,7 +510,7 @@
         "health": "ok",
         "argo": null,
         "metrics": {
-          "cpu_millicores": 2,
+          "cpu_millicores": 4,
           "memory_mib": 67
         },
         "pods": [
@@ -523,7 +523,7 @@
             "node": "control-plane",
             "health": "ok",
             "metrics": {
-              "cpu_millicores": 1,
+              "cpu_millicores": 2,
               "memory_mib": 23
             }
           },
@@ -536,7 +536,7 @@
             "node": "control-plane",
             "health": "ok",
             "metrics": {
-              "cpu_millicores": 1,
+              "cpu_millicores": 2,
               "memory_mib": 44
             }
           }
@@ -566,7 +566,7 @@
         "health": "ok",
         "argo": null,
         "metrics": {
-          "cpu_millicores": 0,
+          "cpu_millicores": 8,
           "memory_mib": 134
         },
         "pods": [
@@ -592,7 +592,7 @@
             "node": "control-plane",
             "health": "ok",
             "metrics": {
-              "cpu_millicores": 0,
+              "cpu_millicores": 1,
               "memory_mib": 19
             }
           },
@@ -605,12 +605,57 @@
             "node": "worker-2",
             "health": "ok",
             "metrics": {
-              "cpu_millicores": 0,
+              "cpu_millicores": 7,
               "memory_mib": 58
             }
           }
         ],
         "services": []
+      },
+      {
+        "id": "metrics-server",
+        "name": "Metrics Server",
+        "purpose": "Mide CPU y memoria de pods y nodos: lo que hace brillar a cada estrella",
+        "category": "control",
+        "system": "Kubernetes",
+        "replicas": {
+          "desired": 1,
+          "ready": 1
+        },
+        "health": "ok",
+        "argo": {
+          "sync": "Synced",
+          "health": "Healthy"
+        },
+        "metrics": {
+          "cpu_millicores": 3,
+          "memory_mib": 21
+        },
+        "pods": [
+          {
+            "id": "core/metrics-server/pod-1",
+            "name": null,
+            "phase": "Running",
+            "ready": true,
+            "restarts": 0,
+            "node": "worker-2",
+            "health": "ok",
+            "metrics": {
+              "cpu_millicores": 3,
+              "memory_mib": 21
+            }
+          }
+        ],
+        "services": [
+          {
+            "id": "core/metrics-server/service-1",
+            "name": null,
+            "health": "ok",
+            "targets": [
+              "core/metrics-server/pod-1"
+            ]
+          }
+        ]
       },
       {
         "id": "tigera-operator",
@@ -625,8 +670,8 @@
         "health": "ok",
         "argo": null,
         "metrics": {
-          "cpu_millicores": 2,
-          "memory_mib": 125
+          "cpu_millicores": 6,
+          "memory_mib": 108
         },
         "pods": [
           {
@@ -638,8 +683,8 @@
             "node": "control-plane",
             "health": "ok",
             "metrics": {
-              "cpu_millicores": 2,
-              "memory_mib": 125
+              "cpu_millicores": 6,
+              "memory_mib": 108
             }
           }
         ],
@@ -658,8 +703,8 @@
         "health": "ok",
         "argo": null,
         "metrics": {
-          "cpu_millicores": 67,
-          "memory_mib": 327
+          "cpu_millicores": 111,
+          "memory_mib": 329
         },
         "pods": [
           {
@@ -671,7 +716,7 @@
             "node": "worker-2",
             "health": "ok",
             "metrics": {
-              "cpu_millicores": 26,
+              "cpu_millicores": 45,
               "memory_mib": 104
             }
           },
@@ -684,7 +729,7 @@
             "node": "control-plane",
             "health": "ok",
             "metrics": {
-              "cpu_millicores": 20,
+              "cpu_millicores": 30,
               "memory_mib": 117
             }
           },
@@ -697,8 +742,8 @@
             "node": "worker-1",
             "health": "ok",
             "metrics": {
-              "cpu_millicores": 21,
-              "memory_mib": 106
+              "cpu_millicores": 36,
+              "memory_mib": 108
             }
           }
         ],
@@ -717,7 +762,7 @@
         "health": "ok",
         "argo": null,
         "metrics": {
-          "cpu_millicores": 3,
+          "cpu_millicores": 5,
           "memory_mib": 112
         },
         "pods": [
@@ -730,7 +775,7 @@
             "node": "worker-2",
             "health": "ok",
             "metrics": {
-              "cpu_millicores": 2,
+              "cpu_millicores": 4,
               "memory_mib": 77
             }
           },
@@ -773,7 +818,7 @@
         "health": "ok",
         "argo": null,
         "metrics": {
-          "cpu_millicores": 4,
+          "cpu_millicores": 5,
           "memory_mib": 59
         },
         "pods": [
@@ -786,7 +831,7 @@
             "node": "control-plane",
             "health": "ok",
             "metrics": {
-              "cpu_millicores": 4,
+              "cpu_millicores": 5,
               "memory_mib": 59
             }
           }
@@ -815,7 +860,7 @@
         "health": "ok",
         "argo": null,
         "metrics": {
-          "cpu_millicores": 3,
+          "cpu_millicores": 4,
           "memory_mib": 146
         },
         "pods": [
@@ -841,7 +886,7 @@
             "node": "control-plane",
             "health": "ok",
             "metrics": {
-              "cpu_millicores": 1,
+              "cpu_millicores": 2,
               "memory_mib": 57
             }
           }
@@ -930,8 +975,8 @@
         "health": "ok",
         "argo": null,
         "metrics": {
-          "cpu_millicores": 4,
-          "memory_mib": 27
+          "cpu_millicores": 1,
+          "memory_mib": 28
         },
         "pods": [
           {
@@ -943,8 +988,8 @@
             "node": "control-plane",
             "health": "ok",
             "metrics": {
-              "cpu_millicores": 4,
-              "memory_mib": 27
+              "cpu_millicores": 1,
+              "memory_mib": 28
             }
           }
         ],
@@ -1064,8 +1109,8 @@
         "health": "ok",
         "argo": null,
         "metrics": {
-          "cpu_millicores": 1,
-          "memory_mib": 109
+          "cpu_millicores": 24,
+          "memory_mib": 110
         },
         "pods": [
           {
@@ -1077,8 +1122,8 @@
             "node": "worker-1",
             "health": "ok",
             "metrics": {
-              "cpu_millicores": 1,
-              "memory_mib": 109
+              "cpu_millicores": 24,
+              "memory_mib": 110
             }
           }
         ],
@@ -1106,8 +1151,8 @@
         "health": "ok",
         "argo": null,
         "metrics": {
-          "cpu_millicores": 6,
-          "memory_mib": 158
+          "cpu_millicores": 136,
+          "memory_mib": 257
         },
         "pods": [
           {
@@ -1119,8 +1164,8 @@
             "node": "worker-1",
             "health": "ok",
             "metrics": {
-              "cpu_millicores": 6,
-              "memory_mib": 158
+              "cpu_millicores": 136,
+              "memory_mib": 257
             }
           }
         ],
@@ -1148,7 +1193,7 @@
         "health": "ok",
         "argo": null,
         "metrics": {
-          "cpu_millicores": 0,
+          "cpu_millicores": 1,
           "memory_mib": 22
         },
         "pods": [
@@ -1161,7 +1206,7 @@
             "node": "worker-1",
             "health": "ok",
             "metrics": {
-              "cpu_millicores": 0,
+              "cpu_millicores": 1,
               "memory_mib": 22
             }
           }
@@ -1190,7 +1235,7 @@
         "health": "ok",
         "argo": null,
         "metrics": {
-          "cpu_millicores": 0,
+          "cpu_millicores": 1,
           "memory_mib": 21
         },
         "pods": [
@@ -1203,7 +1248,7 @@
             "node": "worker-1",
             "health": "ok",
             "metrics": {
-              "cpu_millicores": 0,
+              "cpu_millicores": 1,
               "memory_mib": 21
             }
           }
@@ -1274,7 +1319,7 @@
         "health": "ok",
         "argo": null,
         "metrics": {
-          "cpu_millicores": 4,
+          "cpu_millicores": 5,
           "memory_mib": 30
         },
         "pods": [
@@ -1287,7 +1332,7 @@
             "node": "worker-1",
             "health": "ok",
             "metrics": {
-              "cpu_millicores": 4,
+              "cpu_millicores": 5,
               "memory_mib": 30
             }
           }
@@ -1319,8 +1364,8 @@
           "health": "Healthy"
         },
         "metrics": {
-          "cpu_millicores": 0,
-          "memory_mib": 126
+          "cpu_millicores": 1,
+          "memory_mib": 128
         },
         "pods": [
           {
@@ -1332,8 +1377,8 @@
             "node": "worker-1",
             "health": "ok",
             "metrics": {
-              "cpu_millicores": 0,
-              "memory_mib": 126
+              "cpu_millicores": 1,
+              "memory_mib": 128
             }
           }
         ],
@@ -1364,7 +1409,7 @@
           "health": "Healthy"
         },
         "metrics": {
-          "cpu_millicores": 4,
+          "cpu_millicores": 5,
           "memory_mib": 55
         },
         "pods": [
@@ -1390,7 +1435,7 @@
             "node": "worker-1",
             "health": "ok",
             "metrics": {
-              "cpu_millicores": 2,
+              "cpu_millicores": 3,
               "memory_mib": 39
             }
           }
@@ -1459,8 +1504,8 @@
         "health": "ok",
         "pods": 16,
         "metrics": {
-          "cpu_millicores": 142,
-          "memory_mib": 1869
+          "cpu_millicores": 165,
+          "memory_mib": 1915
         }
       },
       {
@@ -1470,8 +1515,8 @@
         "health": "ok",
         "pods": 17,
         "metrics": {
-          "cpu_millicores": 87,
-          "memory_mib": 1660
+          "cpu_millicores": 190,
+          "memory_mib": 1773
         }
       },
       {
@@ -1479,10 +1524,10 @@
         "name": "worker 2",
         "role": "worker",
         "health": "ok",
-        "pods": 8,
+        "pods": 9,
         "metrics": {
-          "cpu_millicores": 54,
-          "memory_mib": 985
+          "cpu_millicores": 311,
+          "memory_mib": 989
         }
       }
     ]
