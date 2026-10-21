@@ -39,7 +39,7 @@ React: App ─┬► components/SceneCanvas ─► scene/GalaxyScene ─► layo
 | --- | --- |
 | `src/App.tsx` | Page: the scene plus the UI overlay (title, legend, view toggle, skip link), and the list view instead of the scene when chosen (`?view=list`) or without WebGL. |
 | `src/components/ListView.tsx` | Accessible list view: the same content as the scene as nested lists (ownership = nesting), with kind and health as text; picking an item selects it like a click in the scene. |
-| `src/components/Legend.tsx` | Bottom-left legend. Rendered from `scene/symbology.ts`, so it always matches the scene. |
+| `src/components/Legend.tsx` | Bottom-left legend. Rendered from `scene/symbology.ts`, so it always matches the scene. Starts closed (open, it covers the projects the rotation brings to that corner) and remembers the visitor's choice in `localStorage`. |
 | `src/components/Sidebar.tsx` | Always-visible right panel: cluster overview, or the selected object. |
 | `src/components/ObjectDetails.tsx` | Detail of each kind of object (health lives here, as text), with links to related objects. |
 | `src/components/KindSymbol.tsx` | CSS copy of a scene shape, shared by legend and sidebar. |

@@ -87,6 +87,11 @@ body,
   font-size: 12px;
 }
 
+/* Closed (the default), it is just a small pill. */
+.legend:not([open]) {
+  min-width: 0;
+}
+
 .legend summary {
   cursor: pointer;
   font-size: 11px;
@@ -373,10 +378,6 @@ code {
   .sidebar {
     border-left: 0;
     border-top: 1px solid var(--border);
-  }
-
-  .legend:not([open]) {
-    min-width: 0;
   }
 }
 
