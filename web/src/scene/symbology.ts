@@ -96,7 +96,7 @@ export const CPU_GLOW = {
    * objects, and platform components (DaemonSets summed over three nodes) run hot: full
    * halos would melt them into white blots that hide what is around them.
    */
-  haloShare: { node: 0.25, component: 0.7, workload: 0.8 } as Partial<Record<ObjectKind, number>>,
+  haloShare: { node: 0.25, component: 0.55, workload: 0.8 } as Partial<Record<ObjectKind, number>>,
   /** A platform pod sits right by its component with the same CPU: a small share, so the
    * component carries the light instead of two halos adding up. */
   platformPodShare: 0.35,
@@ -104,7 +104,7 @@ export const CPU_GLOW = {
    * Most the halo may add around the core, in CSS pixels. Like a real star, the glow keeps
    * about the same size on screen at any distance: zooming in grows the object, not its glow.
    */
-  haloMaxPx: 120,
+  haloMaxPx: 90,
   /**
    * Heat: with CPU the halo warms from the kind's color to amber and the core to a warm
    * white, so busy objects stand out at a glance even with no motion at all.
@@ -121,10 +121,10 @@ export const CPU_GLOW = {
   haloMax: 9,
   /** Halo intensity at zero and full glow. */
   haloDim: 0.04,
-  haloBright: 1.6,
+  haloBright: 1.25,
   /** Core brightness at zero and full glow. */
-  coreDim: 0.28,
-  coreBright: 1.6,
+  coreDim: 0.35,
+  coreBright: 1.3,
   /** How far the core turns white at full glow (0 keeps its kind's color). */
   whiten: 0.5,
   /** Bright inner glow around the core, on top of the soft halo. */

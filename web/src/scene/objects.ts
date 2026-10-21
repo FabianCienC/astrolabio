@@ -92,7 +92,7 @@ const vertexShader = /* glsl */ `
     // Busy stars beat: faster and stronger with CPU, each at its own phase (never with
     // reduced motion; heat below carries the same news without moving).
     float breath = 1.0 + uMotion * 0.35 * smoothstep(0.2, 1.0, g) * sin(uTime * 6.2832 * (0.5 + 1.8 * g) + aIndex * 1.7);
-    float heat = smoothstep(0.08, 0.6, g);
+    float heat = smoothstep(0.15, 0.85, g);
 
     // Everything else dims while something is selected (hover lifts it back); the selected
     // object outshines it all, tinted toward white.
