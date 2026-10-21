@@ -15,7 +15,8 @@ uv sync
 uv run pytest                       # all tests; one: uv run pytest tests/contract/test_models.py::test_example_is_valid_and_ids_are_unique
 uv run ruff check . && uv run ruff format --check .
 uv run export-contract              # regenerate ../contract/ after changing contract/models.py or contract/example.py
-ASTROLABIO_ENV=development uv run uvicorn astrolabio_api.main:app --reload
+ASTROLABIO_ENV=development uv run uvicorn astrolabio_api.main:app --reload                           # live cluster (kubeconfig)
+ASTROLABIO_ENV=development ASTROLABIO_SOURCE=example uv run uvicorn astrolabio_api.main:app --reload  # example galaxy, no cluster
 ```
 
 Web (run from `web/`; see `web/README.md` for the module map):

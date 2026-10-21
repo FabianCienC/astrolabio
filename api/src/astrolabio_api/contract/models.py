@@ -38,9 +38,17 @@ _PUBLIC_REPO = re.compile(r"^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+
 _PUBLIC_HOST = re.compile(r"^([a-z0-9-]+\.)*fabiancienfuegos\.com$")
 
 
-def _check_public_repo(url: str) -> str:
+def is_public_repo(url: str) -> bool:
     # Defense in depth: the GitOps repo is private and must never leak.
-    if not _PUBLIC_REPO.match(url) or "homelab-gitops" in url.lower():
+    return bool(_PUBLIC_REPO.match(url)) and "homelab-gitops" not in url.lower()
+
+
+def is_public_host(host: str) -> bool:
+    return bool(_PUBLIC_HOST.match(host))
+
+
+def _check_public_repo(url: str) -> str:
+    if not is_public_repo(url):
         raise ValueError("only public GitHub repos are published")
     return url
 
@@ -161,7 +169,7 @@ class Route(Model):
     @classmethod
     def _public_hostnames(cls, hostnames: list[str]) -> list[str]:
         for host in hostnames:
-            if not _PUBLIC_HOST.match(host):
+            if not is_public_host(host):
                 raise ValueError("only public fabiancienfuegos.com hostnames are published")
         return hostnames
 

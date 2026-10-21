@@ -3,7 +3,7 @@
 `find_leaks` walks a JSON document and reports raw Kubernetes keys, IPs,
 versions, internal paths and the poisoned cluster's secrets. It runs on what
 `GET /api/galaxy` serves today and on what `assembly/` builds from the poisoned
-cluster (written before `assembly/` exists: PLAN E1.2).
+cluster.
 """
 
 import re
@@ -11,8 +11,9 @@ from collections.abc import Iterator
 
 import pytest
 from fastapi.testclient import TestClient
-from poisoned_cluster import SECRETS, poisoned_cluster
+from poisoned_cluster import SECRETS, SHA, poisoned_cluster
 
+from astrolabio_api.assembly import assemble_galaxy
 from astrolabio_api.config import Settings
 from astrolabio_api.kube.cluster import RESOURCES
 from astrolabio_api.main import create_app
@@ -66,18 +67,13 @@ def test_scanner_catches_the_poisoned_cluster():
 
 
 def test_served_galaxy_has_no_leaks():
-    response = TestClient(create_app(Settings(environment="production"))).get("/api/galaxy")
+    response = TestClient(create_app(Settings(environment="production", source="example"))).get(
+        "/api/galaxy"
+    )
     assert find_leaks(response.json()) == []
 
 
-@pytest.mark.xfail(
-    raises=ModuleNotFoundError,
-    strict=True,
-    reason="assembly/ does not exist yet (PLAN E1.5-E1.6); drop this mark then",
-)
 def test_assembled_galaxy_has_no_leaks():
-    from astrolabio_api.assembly import assemble_galaxy
-
     galaxy = assemble_galaxy(poisoned_cluster())
     assert find_leaks(galaxy.model_dump(mode="json")) == []
     # Allowed data survives: this is a filter, not a wipe.
@@ -85,6 +81,19 @@ def test_assembled_galaxy_has_no_leaks():
     assert cv.id == "cv"
     assert [r.hostnames for r in cv.routes] == [["cv.fabiancienfuegos.com"]]
     assert cv.workloads[0].criticality is None  # unknown annotation value
+    assert cv.workloads[0].commit and cv.workloads[0].commit.sha == SHA
+    assert [p.name for p in cv.workloads[0].all_pods()] == ["cv-7d9f8b6c5-abcde"]
+
+
+@pytest.mark.xfail(
+    raises=ModuleNotFoundError,
+    strict=True,
+    reason="the infra catalog does not exist yet (PLAN E1.6); drop this mark then",
+)
+def test_core_publishes_only_catalog_components():
+    import astrolabio_api.assembly.catalog  # noqa: F401
+
+    galaxy = assemble_galaxy(poisoned_cluster())
     assert {c.id for c in galaxy.core.components} == {"coredns", "kube-apiserver", "calico-node"}
 
 

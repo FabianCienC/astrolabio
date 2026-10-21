@@ -84,6 +84,11 @@ class Cluster:
             for key, informer in self.informers.items()
         ]
 
+    @property
+    def synced(self) -> bool:
+        """Every informer has listed at least once."""
+        return all(i.synced.is_set() for i in self.informers.values())
+
     async def wait_synced(self) -> None:
         await asyncio.gather(*(i.synced.wait() for i in self.informers.values()))
 
