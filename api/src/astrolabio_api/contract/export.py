@@ -15,9 +15,22 @@ from .models import Galaxy
 OUTPUT_DIR = Path(__file__).resolve().parents[4] / "contract"
 
 
+def _drop_property_titles(schema: dict) -> dict:
+    """Removes the auto-generated `title` of each property.
+
+    Pydantic titles every field ("Health", "Id"...), and json-schema-to-typescript
+    turns each title into its own type alias (Health1, Health2, Id3...). Model
+    titles are kept, so the TS interfaces keep their names.
+    """
+    for definition in [schema, *schema.get("$defs", {}).values()]:
+        for prop in definition.get("properties", {}).values():
+            prop.pop("title", None)
+    return schema
+
+
 def render() -> dict[str, str]:
     """File name -> content of every exported file."""
-    schema = Galaxy.model_json_schema(mode="serialization")
+    schema = _drop_property_titles(Galaxy.model_json_schema(mode="serialization"))
     return {
         "galaxy.schema.json": json.dumps(schema, indent=2, ensure_ascii=False) + "\n",
         "galaxy.example.json": example_galaxy().model_dump_json(indent=2) + "\n",

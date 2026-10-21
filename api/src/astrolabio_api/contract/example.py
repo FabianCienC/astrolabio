@@ -1,7 +1,9 @@
-"""Example galaxy: feeds the web fixture and the API until the informers exist.
+"""Example galaxy: a snapshot of the real cluster, sanitized by the contract.
 
-It deliberately covers every state the scene must be able to draw
-(ok, degraded, down, unknown, OutOfSync, missing metrics).
+Taken by hand from `kubectl get` on 2026-10-21 (no metrics-server yet, so no
+CPU or memory). It feeds the web fixture and the API until the informers exist,
+which will produce this same shape live. Platform pods and services are
+anonymous and nodes use their generic names, exactly as the API will publish them.
 """
 
 from datetime import UTC, datetime
@@ -11,20 +13,138 @@ from .models import (
     Commit,
     Constellation,
     Core,
+    Criticality,
     Galaxy,
     InfraCategory,
     InfraComponent,
-    Metrics,
     Node,
+    NodeId,
+    Pod,
     Replicas,
-    Star,
+    ReplicaSet,
+    Route,
+    Service,
+    Workload,
 )
 
 _SYNCED = ArgoStatus(sync="Synced", health="Healthy")
+CP: NodeId = "control-plane"
+W1: NodeId = "worker-1"
+W2: NodeId = "worker-2"
 
 
 def _commit(repo: str, sha: str) -> Commit:
     return Commit(sha=sha, url=f"{repo}/commit/{sha}")
+
+
+def _pod(namespace: str, name: str, node: NodeId, restarts: int) -> Pod:
+    return Pod(
+        id=f"{namespace}/pod/{name}",
+        name=name,
+        phase="Running",
+        ready=True,
+        restarts=restarts,
+        node=node,
+        health="ok",
+    )
+
+
+def _web_project(
+    namespace: str,
+    project: str,
+    description: str,
+    repo: str,
+    sha: str,
+    replica_set: str,
+    pods: list[Pod],
+    workload_description: str,
+    criticality: Criticality,
+) -> Constellation:
+    """A project with one Deployment, its Service and its public HTTPRoute (hola and cv)."""
+    replicas = Replicas(desired=len(pods), ready=len(pods))
+    workload = Workload(
+        id=f"{namespace}/deployment/{namespace}",
+        name=namespace,
+        kind="Deployment",
+        description=workload_description,
+        role="frontend",
+        criticality=criticality,
+        replicas=replicas,
+        health="ok",
+        commit=_commit(repo, sha),
+        replica_sets=[
+            ReplicaSet(
+                id=f"{namespace}/replicaset/{replica_set}",
+                name=replica_set,
+                replicas=replicas,
+                health="ok",
+                pods=pods,
+            )
+        ],
+    )
+    service = Service(
+        id=f"{namespace}/service/{namespace}",
+        name=namespace,
+        health="ok",
+        targets=[p.id for p in pods],
+    )
+    route = Route(
+        id=f"{namespace}/route/{namespace}",
+        name=namespace,
+        hostnames=[f"{namespace}.fabiancienfuegos.com"],
+        health="ok",
+        services=[service.id],
+    )
+    return Constellation(
+        id=namespace,
+        project=project,
+        description=description,
+        repo=repo,
+        argo=_SYNCED,
+        health="ok",
+        workloads=[workload],
+        services=[service],
+        routes=[route],
+    )
+
+
+def _projects() -> list[Constellation]:
+    hola = _web_project(
+        "hola",
+        "Hola",
+        "App de prueba del homelab",
+        "https://github.com/FabianCienC/hola-homelab",
+        "91b74663060424c6c3b8485735f291fd53a0d3d3",
+        "hola-7cddc9f88c",
+        [
+            _pod("hola", "hola-7cddc9f88c-dkvxn", W1, 1),
+            _pod("hola", "hola-7cddc9f88c-lgzzd", W1, 1),
+        ],
+        "Página estática servida con nginx",
+        "low",
+    )
+    cv = _web_project(
+        "cv",
+        "CV",
+        "Mi CV web en React",
+        "https://github.com/FabianCienC/CV",
+        "eb8d8c0f9b206ddecb2dec958c851139503a3ea7",
+        "cv-78ff77987",
+        [_pod("cv", "cv-78ff77987-gx9hx", W1, 1), _pod("cv", "cv-78ff77987-lhggf", W1, 1)],
+        "Frontend estático con nginx",
+        "medium",
+    )
+    # Namespace and Argo CD app exist, but nothing is deployed yet.
+    astrolabio = Constellation(
+        id="astrolabio",
+        project="Astrolabio",
+        description="Visualización 3D en tiempo real del homelab",
+        repo="https://github.com/FabianCienC/astrolabio",
+        argo=_SYNCED,
+        health="unknown",
+        workloads=[],
+    )
+    return [hola, cv, astrolabio]
 
 
 def _component(
@@ -32,187 +152,267 @@ def _component(
     name: str,
     purpose: str,
     category: InfraCategory,
-    replicas: int,
+    system: str,
+    pods: list[tuple[NodeId, int]],
     *,
-    argo: bool = True,
-    cpu: int | None = None,
+    services: int = 0,
+    argo: bool = False,
 ) -> InfraComponent:
+    """A platform workload. `pods` is (node, restarts) per pod; every service selects all pods."""
+    published = [
+        Pod(
+            id=f"core/{id}/pod-{i + 1}",
+            name=None,
+            phase="Running",
+            ready=True,
+            restarts=restarts,
+            node=node,
+            health="ok",
+        )
+        for i, (node, restarts) in enumerate(pods)
+    ]
     return InfraComponent(
         id=id,
         name=name,
         purpose=purpose,
         category=category,
-        replicas=Replicas(desired=replicas, ready=replicas),
+        system=system,
+        replicas=Replicas(desired=len(pods), ready=len(pods)),
         health="ok",
         argo=_SYNCED if argo else None,
-        metrics=Metrics(cpu_millicores=cpu),
+        pods=published,
+        services=[
+            Service(
+                id=f"core/{id}/service-{n + 1}",
+                name=None,
+                health="ok",
+                targets=[p.id for p in published],
+            )
+            for n in range(services)
+        ],
     )
 
 
-def example_galaxy() -> Galaxy:
-    hola_repo = "https://github.com/FabianCienC/hola-homelab"
-    cv_repo = "https://github.com/FabianCienC/CV"
-    astrolabio_repo = "https://github.com/FabianCienC/astrolabio"
-
-    constellations = [
-        Constellation(
-            id="hola",
-            project="Hola",
-            description="App de prueba del homelab",
-            repo=hola_repo,
-            argo=_SYNCED,
-            stars=[
-                Star(
-                    id="hola/hola",
-                    name="hola",
-                    kind="Deployment",
-                    description="Página estática servida con nginx",
-                    role="frontend",
-                    criticality="low",
-                    replicas=Replicas(desired=2, ready=2),
-                    health="ok",
-                    commit=_commit(hola_repo, "91b7466c2f0e4d8a9b1c3e5f7a9b0c2d4e6f8a1b"),
-                    metrics=Metrics(cpu_millicores=2, memory_mib=11),
-                ),
-            ],
-        ),
-        Constellation(
-            id="cv",
-            project="CV",
-            description="Mi CV web en React",
-            repo=cv_repo,
-            argo=ArgoStatus(sync="OutOfSync", health="Progressing"),
-            stars=[
-                Star(
-                    id="cv/cv",
-                    name="cv",
-                    kind="Deployment",
-                    description="Frontend estático con nginx",
-                    role="frontend",
-                    criticality="medium",
-                    replicas=Replicas(desired=2, ready=1),
-                    health="degraded",
-                    commit=_commit(cv_repo, "eb8d8c0a3f1b2c4d5e6f708192a3b4c5d6e7f809"),
-                    metrics=Metrics(cpu_millicores=5, memory_mib=18),
-                ),
-            ],
-        ),
-        Constellation(
-            id="astrolabio",
-            project="Astrolabio",
-            description="Visualización 3D en tiempo real del homelab",
-            repo=astrolabio_repo,
-            argo=ArgoStatus(sync="Synced", health="Degraded"),
-            stars=[
-                Star(
-                    id="astrolabio/astrolabio-web",
-                    name="astrolabio-web",
-                    kind="Deployment",
-                    description="Galaxia 3D con Three.js servida por nginx",
-                    role="frontend",
-                    criticality="medium",
-                    replicas=Replicas(desired=2, ready=2),
-                    health="ok",
-                    commit=_commit(astrolabio_repo, "4af9b5c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6"),
-                ),
-                Star(
-                    id="astrolabio/astrolabio-api",
-                    name="astrolabio-api",
-                    kind="Deployment",
-                    description="Watchers de Kubernetes, REST y WebSocket",
-                    role="api",
-                    criticality="high",
-                    replicas=Replicas(desired=1, ready=0),
-                    health="down",
-                    commit=_commit(astrolabio_repo, "e3a2add1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7"),
-                ),
-                Star(
-                    id="astrolabio/astrolabio-anomalias",
-                    name="astrolabio-anomalias",
-                    kind="Deployment",
-                    role="worker",
-                    replicas=Replicas(desired=1, ready=1),
-                    health="unknown",
-                ),
-            ],
-        ),
-    ]
-
-    components = [
+def _platform() -> list[InfraComponent]:
+    k8s, calico, argocd = "Kubernetes", "Calico", "Argo CD"
+    return [
+        # Kubernetes control plane (static pods on the control plane) and cluster add-ons.
         _component(
-            "api-server",
+            "kube-apiserver",
             "API server",
-            "Punto de entrada al clúster",
+            "Punto de entrada al clúster: toda lectura y escritura pasa por aquí",
             "control",
-            1,
-            argo=False,
-            cpu=180,
+            k8s,
+            [(CP, 2)],
+            services=1,
         ),
         _component(
-            "etcd", "etcd", "Base de datos del estado del clúster", "control", 1, argo=False, cpu=60
+            "etcd", "etcd", "Base de datos con el estado del clúster", "control", k8s, [(CP, 4)]
         ),
         _component(
-            "coredns", "CoreDNS", "DNS interno de servicios", "network", 2, argo=False, cpu=4
+            "kube-controller-manager",
+            "Controller manager",
+            "Lleva el estado real hacia el deseado (réplicas, nodos, endpoints)",
+            "control",
+            k8s,
+            [(CP, 5)],
         ),
         _component(
-            "kube-proxy",
-            "kube-proxy",
-            "Reglas de red de los Services",
+            "kube-scheduler",
+            "Scheduler",
+            "Decide en qué nodo corre cada pod",
+            "control",
+            k8s,
+            [(CP, 5)],
+        ),
+        _component(
+            "coredns",
+            "CoreDNS",
+            "DNS interno: resuelve los nombres de los Services",
             "network",
-            3,
-            argo=False,
-            cpu=2,
+            k8s,
+            [(CP, 4), (CP, 4)],
+            services=1,
         ),
         _component(
-            "calico", "Calico", "Red de pods y NetworkPolicies", "network", 3, argo=False, cpu=25
+            "kube-proxy",
+            "kube-proxy",
+            "Traduce Services a reglas de red en cada nodo",
+            "network",
+            k8s,
+            [(W1, 5), (CP, 4), (W2, 5)],
+        ),
+        # Calico, installed and kept up to date by the Tigera operator.
+        _component(
+            "tigera-operator",
+            "Tigera operator",
+            "Instala y actualiza Calico",
+            "network",
+            calico,
+            [(CP, 5)],
         ),
         _component(
-            "traefik", "Traefik", "Gateway API: enruta el tráfico de entrada", "ingress", 1, cpu=8
+            "calico-node",
+            "Calico node",
+            "Red de pods y NetworkPolicies en cada nodo",
+            "network",
+            calico,
+            [(W2, 5), (CP, 4), (W1, 5)],
+        ),
+        _component(
+            "calico-typha",
+            "Calico Typha",
+            "Reparte los cambios de red a los nodos sin saturar el API server",
+            "network",
+            calico,
+            [(W2, 1), (CP, 4)],
+            services=1,
+        ),
+        _component(
+            "calico-kube-controllers",
+            "Calico controllers",
+            "Sincroniza Calico con los objetos de Kubernetes",
+            "network",
+            calico,
+            [(CP, 4)],
+            services=1,
+        ),
+        _component(
+            "calico-apiserver",
+            "Calico API server",
+            "API de los recursos de Calico",
+            "network",
+            calico,
+            [(CP, 4), (CP, 4)],
+            services=1,
+        ),
+        _component(
+            "calico-csi",
+            "Calico CSI",
+            "Driver de volúmenes de Calico en cada nodo",
+            "network",
+            calico,
+            [(W2, 10), (W1, 10), (CP, 8)],
+        ),
+        _component(
+            "goldmane",
+            "Goldmane",
+            "Agrega los flujos de red que ve Calico",
+            "network",
+            calico,
+            [(CP, 4)],
+            services=1,
+        ),
+        _component(
+            "whisker",
+            "Whisker",
+            "Consola para observar los flujos de red de Calico",
+            "network",
+            calico,
+            [(CP, 8)],
+            services=1,
+        ),
+        # Argo CD: all of it runs on worker 1.
+        _component(
+            "argocd-server",
+            "Argo CD server",
+            "API e interfaz web de Argo CD",
+            "gitops",
+            argocd,
+            [(W1, 1)],
+            services=2,
+        ),
+        _component(
+            "argocd-repo-server",
+            "Repo server",
+            "Clona los repos de Git y genera los manifiestos",
+            "gitops",
+            argocd,
+            [(W1, 1)],
+            services=1,
+        ),
+        _component(
+            "argocd-application-controller",
+            "Application controller",
+            "Compara Git con el clúster y sincroniza las diferencias",
+            "gitops",
+            argocd,
+            [(W1, 1)],
+            services=1,
+        ),
+        _component(
+            "argocd-applicationset-controller",
+            "ApplicationSet controller",
+            "Genera Applications a partir de plantillas",
+            "gitops",
+            argocd,
+            [(W1, 1)],
+            services=1,
+        ),
+        _component(
+            "argocd-notifications-controller",
+            "Notifications controller",
+            "Envía avisos de los eventos de Argo CD",
+            "gitops",
+            argocd,
+            [(W1, 1)],
+            services=1,
+        ),
+        _component(
+            "argocd-dex-server",
+            "Dex",
+            "Inicio de sesión (SSO) de Argo CD",
+            "gitops",
+            argocd,
+            [(W1, 1)],
+            services=1,
+        ),
+        _component(
+            "argocd-redis", "Redis", "Caché de Argo CD", "gitops", argocd, [(W1, 1)], services=1
+        ),
+        # Ingress and secrets, deployed by Argo CD apps.
+        _component(
+            "traefik",
+            "Traefik",
+            "Gateway API: enruta el tráfico de entrada a cada app",
+            "ingress",
+            "Traefik",
+            [(W1, 1)],
+            services=1,
+            argo=True,
         ),
         _component(
             "cloudflared",
             "Cloudflare Tunnel",
-            "Publica el clúster sin abrir puertos",
+            "Publica el clúster en internet sin abrir puertos",
             "ingress",
-            2,
-            cpu=3,
+            "Cloudflare",
+            [(W1, 1), (W1, 1)],
+            argo=True,
         ),
         _component(
-            "argocd",
-            "Argo CD",
-            "GitOps: sincroniza el clúster con Git",
-            "gitops",
-            1,
-            argo=False,
-            cpu=40,
-        ),
-        _component(
-            "sealed-secrets", "Sealed Secrets", "Secretos cifrados en Git", "security", 1, cpu=1
+            "sealed-secrets",
+            "Sealed Secrets",
+            "Descifra en el clúster los secretos que viven cifrados en Git",
+            "security",
+            "Sealed Secrets",
+            [(W1, 1)],
+            services=2,
+            argo=True,
         ),
     ]
 
-    nodes = [
-        Node(
-            id="control-plane",
-            name="control plane",
-            role="control-plane",
-            health="ok",
-            pods=14,
-            metrics=Metrics(cpu_millicores=420, memory_mib=1650),
-        ),
-        Node(
-            id="worker-1",
-            name="worker 1",
-            role="worker",
-            health="ok",
-            pods=11,
-            metrics=Metrics(cpu_millicores=160, memory_mib=1320),
-        ),
-        Node(id="worker-2", name="worker 2", role="worker", health="ok", pods=9),
-    ]
 
+def example_galaxy() -> Galaxy:
     return Galaxy(
-        generated_at=datetime(2026, 10, 21, 12, 0, tzinfo=UTC),
-        constellations=constellations,
-        core=Core(components=components, nodes=nodes),
+        generated_at=datetime(2026, 10, 21, 18, 0, tzinfo=UTC),
+        constellations=_projects(),
+        core=Core(
+            components=_platform(),
+            nodes=[
+                Node(id=CP, name="control plane", role="control-plane", health="ok", pods=16),
+                Node(id=W1, name="worker 1", role="worker", health="ok", pods=18),
+                Node(id=W2, name="worker 2", role="worker", health="ok", pods=4),
+            ],
+        ),
     )

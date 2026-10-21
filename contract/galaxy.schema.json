@@ -10,7 +10,6 @@
             "OutOfSync",
             "Unknown"
           ],
-          "title": "Sync",
           "type": "string"
         },
         "health": {
@@ -22,7 +21,6 @@
             "Missing",
             "Unknown"
           ],
-          "title": "Health",
           "type": "string"
         }
       },
@@ -39,11 +37,9 @@
       "properties": {
         "sha": {
           "pattern": "^[0-9a-f]{40}$",
-          "title": "Sha",
           "type": "string"
         },
         "url": {
-          "title": "Url",
           "type": "string"
         }
       },
@@ -61,13 +57,11 @@
         "id": {
           "maxLength": 253,
           "pattern": "^[a-z0-9]([a-z0-9./-]*[a-z0-9])?$",
-          "title": "Id",
           "type": "string"
         },
         "project": {
           "maxLength": 200,
           "minLength": 1,
-          "title": "Project",
           "type": "string"
         },
         "description": {
@@ -81,8 +75,7 @@
               "type": "null"
             }
           ],
-          "default": null,
-          "title": "Description"
+          "default": null
         },
         "repo": {
           "anyOf": [
@@ -93,8 +86,7 @@
               "type": "null"
             }
           ],
-          "default": null,
-          "title": "Repo"
+          "default": null
         },
         "argo": {
           "anyOf": [
@@ -107,18 +99,46 @@
           ],
           "default": null
         },
-        "stars": {
+        "health": {
+          "enum": [
+            "ok",
+            "degraded",
+            "down",
+            "unknown"
+          ],
+          "type": "string"
+        },
+        "workloads": {
           "items": {
-            "$ref": "#/$defs/Star"
+            "$ref": "#/$defs/Workload"
           },
-          "title": "Stars",
+          "type": "array"
+        },
+        "services": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Service"
+          },
+          "type": "array"
+        },
+        "routes": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Route"
+          },
           "type": "array"
         }
       },
       "required": [
         "id",
         "project",
-        "stars"
+        "description",
+        "repo",
+        "argo",
+        "health",
+        "workloads",
+        "services",
+        "routes"
       ],
       "title": "Constellation",
       "type": "object"
@@ -131,14 +151,12 @@
           "items": {
             "$ref": "#/$defs/InfraComponent"
           },
-          "title": "Components",
           "type": "array"
         },
         "nodes": {
           "items": {
             "$ref": "#/$defs/Node"
           },
-          "title": "Nodes",
           "type": "array"
         }
       },
@@ -151,24 +169,21 @@
     },
     "InfraComponent": {
       "additionalProperties": false,
-      "description": "Platform component published from the API's closed catalog.\n\nNo version, image tag, pod names, IPs or configuration.",
+      "description": "Platform component published from the API's closed catalog.\n\nIts pods and services are drawn, but anonymously: no names, versions, image\ntags, IPs or configuration.",
       "properties": {
         "id": {
           "maxLength": 253,
           "pattern": "^[a-z0-9]([a-z0-9./-]*[a-z0-9])?$",
-          "title": "Id",
           "type": "string"
         },
         "name": {
           "maxLength": 200,
           "minLength": 1,
-          "title": "Name",
           "type": "string"
         },
         "purpose": {
           "maxLength": 200,
           "minLength": 1,
-          "title": "Purpose",
           "type": "string"
         },
         "category": {
@@ -179,7 +194,11 @@
             "gitops",
             "security"
           ],
-          "title": "Category",
+          "type": "string"
+        },
+        "system": {
+          "maxLength": 200,
+          "minLength": 1,
           "type": "string"
         },
         "replicas": {
@@ -192,7 +211,6 @@
             "down",
             "unknown"
           ],
-          "title": "Health",
           "type": "string"
         },
         "argo": {
@@ -212,6 +230,20 @@
             "cpu_millicores": null,
             "memory_mib": null
           }
+        },
+        "pods": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Pod"
+          },
+          "type": "array"
+        },
+        "services": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Service"
+          },
+          "type": "array"
         }
       },
       "required": [
@@ -219,8 +251,13 @@
         "name",
         "purpose",
         "category",
+        "system",
         "replicas",
-        "health"
+        "health",
+        "argo",
+        "metrics",
+        "pods",
+        "services"
       ],
       "title": "InfraComponent",
       "type": "object"
@@ -239,8 +276,7 @@
               "type": "null"
             }
           ],
-          "default": null,
-          "title": "Cpu Millicores"
+          "default": null
         },
         "memory_mib": {
           "anyOf": [
@@ -252,10 +288,13 @@
               "type": "null"
             }
           ],
-          "default": null,
-          "title": "Memory Mib"
+          "default": null
         }
       },
+      "required": [
+        "cpu_millicores",
+        "memory_mib"
+      ],
       "title": "Metrics",
       "type": "object"
     },
@@ -269,7 +308,6 @@
             "worker-1",
             "worker-2"
           ],
-          "title": "Id",
           "type": "string"
         },
         "name": {
@@ -278,7 +316,6 @@
             "worker 1",
             "worker 2"
           ],
-          "title": "Name",
           "type": "string"
         },
         "role": {
@@ -286,7 +323,6 @@
             "control-plane",
             "worker"
           ],
-          "title": "Role",
           "type": "string"
         },
         "health": {
@@ -296,12 +332,10 @@
             "down",
             "unknown"
           ],
-          "title": "Health",
           "type": "string"
         },
         "pods": {
           "minimum": 0,
-          "title": "Pods",
           "type": "integer"
         },
         "metrics": {
@@ -317,9 +351,136 @@
         "name",
         "role",
         "health",
-        "pods"
+        "pods",
+        "metrics"
       ],
       "title": "Node",
+      "type": "object"
+    },
+    "Pod": {
+      "additionalProperties": false,
+      "description": "A pod. `name` is `None` for platform pods, which are published anonymously.",
+      "properties": {
+        "id": {
+          "maxLength": 253,
+          "pattern": "^[a-z0-9]([a-z0-9./-]*[a-z0-9])?$",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "maxLength": 253,
+              "pattern": "^[a-z0-9]([a-z0-9./-]*[a-z0-9])?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "phase": {
+          "enum": [
+            "Pending",
+            "Running",
+            "Succeeded",
+            "Failed",
+            "Unknown"
+          ],
+          "type": "string"
+        },
+        "ready": {
+          "type": "boolean"
+        },
+        "restarts": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "node": {
+          "anyOf": [
+            {
+              "enum": [
+                "control-plane",
+                "worker-1",
+                "worker-2"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "health": {
+          "enum": [
+            "ok",
+            "degraded",
+            "down",
+            "unknown"
+          ],
+          "type": "string"
+        },
+        "metrics": {
+          "$ref": "#/$defs/Metrics",
+          "default": {
+            "cpu_millicores": null,
+            "memory_mib": null
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "phase",
+        "ready",
+        "restarts",
+        "node",
+        "health",
+        "metrics"
+      ],
+      "title": "Pod",
+      "type": "object"
+    },
+    "ReplicaSet": {
+      "additionalProperties": false,
+      "description": "The active replica set of a Deployment (two during a rollout). Old empty ones are not\npublished.",
+      "properties": {
+        "id": {
+          "maxLength": 253,
+          "pattern": "^[a-z0-9]([a-z0-9./-]*[a-z0-9])?$",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 253,
+          "pattern": "^[a-z0-9]([a-z0-9./-]*[a-z0-9])?$",
+          "type": "string"
+        },
+        "replicas": {
+          "$ref": "#/$defs/Replicas"
+        },
+        "health": {
+          "enum": [
+            "ok",
+            "degraded",
+            "down",
+            "unknown"
+          ],
+          "type": "string"
+        },
+        "pods": {
+          "items": {
+            "$ref": "#/$defs/Pod"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "replicas",
+        "health",
+        "pods"
+      ],
+      "title": "ReplicaSet",
       "type": "object"
     },
     "Replicas": {
@@ -327,12 +488,10 @@
       "properties": {
         "desired": {
           "minimum": 0,
-          "title": "Desired",
           "type": "integer"
         },
         "ready": {
           "minimum": 0,
-          "title": "Ready",
           "type": "integer"
         }
       },
@@ -343,20 +502,114 @@
       "title": "Replicas",
       "type": "object"
     },
-    "Star": {
+    "Route": {
       "additionalProperties": false,
-      "description": "A workload of a visible project.",
+      "description": "An `HTTPRoute`: the public entry into a project. Hostnames are public by nature.",
       "properties": {
         "id": {
           "maxLength": 253,
           "pattern": "^[a-z0-9]([a-z0-9./-]*[a-z0-9])?$",
-          "title": "Id",
           "type": "string"
         },
         "name": {
           "maxLength": 253,
           "pattern": "^[a-z0-9]([a-z0-9./-]*[a-z0-9])?$",
-          "title": "Name",
+          "type": "string"
+        },
+        "hostnames": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "health": {
+          "enum": [
+            "ok",
+            "degraded",
+            "down",
+            "unknown"
+          ],
+          "type": "string"
+        },
+        "services": {
+          "items": {
+            "maxLength": 253,
+            "pattern": "^[a-z0-9]([a-z0-9./-]*[a-z0-9])?$",
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "hostnames",
+        "health",
+        "services"
+      ],
+      "title": "Route",
+      "type": "object"
+    },
+    "Service": {
+      "additionalProperties": false,
+      "description": "A Service. `targets` are the ids of the pods it selects. No ports or cluster IP.",
+      "properties": {
+        "id": {
+          "maxLength": 253,
+          "pattern": "^[a-z0-9]([a-z0-9./-]*[a-z0-9])?$",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "maxLength": 253,
+              "pattern": "^[a-z0-9]([a-z0-9./-]*[a-z0-9])?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "health": {
+          "enum": [
+            "ok",
+            "degraded",
+            "down",
+            "unknown"
+          ],
+          "type": "string"
+        },
+        "targets": {
+          "items": {
+            "maxLength": 253,
+            "pattern": "^[a-z0-9]([a-z0-9./-]*[a-z0-9])?$",
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "health",
+        "targets"
+      ],
+      "title": "Service",
+      "type": "object"
+    },
+    "Workload": {
+      "additionalProperties": false,
+      "description": "A Deployment, StatefulSet or DaemonSet of a visible project.\n\nDeployments own pods through `replica_sets`; StatefulSets and DaemonSets own\nthem directly in `pods`.",
+      "properties": {
+        "id": {
+          "maxLength": 253,
+          "pattern": "^[a-z0-9]([a-z0-9./-]*[a-z0-9])?$",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 253,
+          "pattern": "^[a-z0-9]([a-z0-9./-]*[a-z0-9])?$",
           "type": "string"
         },
         "kind": {
@@ -365,7 +618,6 @@
             "StatefulSet",
             "DaemonSet"
           ],
-          "title": "Kind",
           "type": "string"
         },
         "description": {
@@ -379,8 +631,7 @@
               "type": "null"
             }
           ],
-          "default": null,
-          "title": "Description"
+          "default": null
         },
         "role": {
           "anyOf": [
@@ -397,8 +648,7 @@
               "type": "null"
             }
           ],
-          "default": null,
-          "title": "Role"
+          "default": null
         },
         "criticality": {
           "anyOf": [
@@ -414,8 +664,7 @@
               "type": "null"
             }
           ],
-          "default": null,
-          "title": "Criticality"
+          "default": null
         },
         "replicas": {
           "$ref": "#/$defs/Replicas"
@@ -427,7 +676,6 @@
             "down",
             "unknown"
           ],
-          "title": "Health",
           "type": "string"
         },
         "commit": {
@@ -447,37 +695,55 @@
             "cpu_millicores": null,
             "memory_mib": null
           }
+        },
+        "replica_sets": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ReplicaSet"
+          },
+          "type": "array"
+        },
+        "pods": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Pod"
+          },
+          "type": "array"
         }
       },
       "required": [
         "id",
         "name",
         "kind",
+        "description",
+        "role",
+        "criticality",
         "replicas",
-        "health"
+        "health",
+        "commit",
+        "metrics",
+        "replica_sets",
+        "pods"
       ],
-      "title": "Star",
+      "title": "Workload",
       "type": "object"
     }
   },
   "additionalProperties": false,
   "properties": {
     "version": {
-      "const": 1,
-      "default": 1,
-      "title": "Version",
+      "const": 2,
+      "default": 2,
       "type": "integer"
     },
     "generated_at": {
       "format": "date-time",
-      "title": "Generated At",
       "type": "string"
     },
     "constellations": {
       "items": {
         "$ref": "#/$defs/Constellation"
       },
-      "title": "Constellations",
       "type": "array"
     },
     "core": {
@@ -485,6 +751,7 @@
     }
   },
   "required": [
+    "version",
     "generated_at",
     "constellations",
     "core"
