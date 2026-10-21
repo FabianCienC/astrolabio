@@ -82,7 +82,7 @@ Puede empezar en cuanto exista el contrato (E1.1).
 - [x] Prometheus mínimo por Helm (`apps/prometheus.yaml` en `homelab-gitops`): solo el servidor, retención de 3 días en `emptyDir`, sin permisos de clúster ni token, namespace `monitoring` con PSA `restricted` y *default deny* (solo entra la API y solo sale a Traefik y al DNS).
 - [x] Scrape de las métricas de Traefik (`traefik-metrics:9100`, cada 5 s); la API consulta `rate(traefik_service_requests_total[20s])` cada 5 s y publica peticiones por segundo por ruta y por Service (las etiquetas de Traefik nunca salen).
 - [x] Líneas Traefik → ruta con una estela de luz cuyo brillo sigue las visitas (y pulsos sobre la línea, sin movimiento reducido); la ruta se enciende con su tráfico. Los pulsos siguen la línea (un `CurvePath` recto) en vez de una `CatmullRomCurve3`.
-- [ ] Conexiones permitidas por NetworkPolicy como líneas tenues (opcional).
+- ~~Conexiones permitidas por NetworkPolicy como líneas tenues~~: fuera del alcance (2026-10-21), aportaba poco frente al tráfico real. El permiso de leer `networkpolicies` (y `gateways`, que tampoco se usaba) sale del ClusterRole.
 
 **Listo cuando:** abrir el CV varias veces ilumina su línea. **Cumplido el 2026-10-21:** la línea de Traefik a CV se enciende con sus visitas en vivo (unos 10 s de la visita a la galaxia, medido de punta a punta), con la ruta encendida, "Visitas: X / min" en la ficha y avisos de actividad.
 

@@ -74,7 +74,7 @@ Lo que **no** existe todavía y hay que agregar: `metrics-server`, Prometheus y 
 | **Frontend (`astrolabio-web`)** | **Three.js + Vite, obligatorio.** Framework: **React + TypeScript** (decidido) | React para la UI (ficha, vista de lista, controles). La escena es un módulo TypeScript con **Three.js directo, sin React Three Fiber**, montado en un componente: casi todo es shader propio, y los deltas del WebSocket escriben directo en los buffers sin pasar por la reconciliación de React. Detalle en `PLAN.md`. Se sirve con `nginx-unprivileged`, igual que `hola` y `cv` |
 | **Backend (`astrolabio-api`)** | **Python** con **FastAPI** + `kubernetes_asyncio` | Un solo *event loop*: los watchers de Kubernetes y los WebSockets conviven sin hilos. Mismo lenguaje que el worker de anomalías, así que se comparten modelos de datos y utilidades. Servido con `uvicorn` |
 | Imagen de la API | `python:3.13-slim` con usuario sin root (UID 10001), dependencias fijadas con hash | Cumple PSA `restricted`. ~150 MB de imagen y ~80–120 MB de RAM |
-| Tráfico entre servicios | **Traefik + NetworkPolicies**, no Hubble | El clúster usa **Calico**, y Hubble solo existe con Cilium. Las líneas salen del tráfico real de entrada por ruta (métricas de Traefik) y de las conexiones **permitidas** entre pods (NetworkPolicies). Migrar a Cilium queda como fase futura opcional |
+| Tráfico entre servicios | **Traefik**, no Hubble | El clúster usa **Calico**, y Hubble solo existe con Cilium. Las líneas salen del tráfico real de entrada por ruta (métricas de Traefik). Dibujar las conexiones *permitidas* por NetworkPolicy se descartó el 2026-10-21: aportaba poco frente al tráfico real. Migrar a Cilium queda como fase futura opcional |
 | Métricas | `metrics-server` (fase 3) y Prometheus mínimo (fase 4) | `metrics-server` es ligero y da CPU/RAM por pod. Prometheus completo (kube-prometheus-stack) no cabe con holgura; se instala solo el servidor, con retención corta |
 | Redis | **Fuera al inicio** | Con una sola réplica de la API no hace falta pub/sub. El worker de anomalías le avisa a la API por HTTP. Se agrega si un día hay varias réplicas |
 | Base de datos | Ninguna al inicio | El estado vive en la caché en memoria de la API. Historial o *replay* → TimescaleDB más adelante |
@@ -112,7 +112,7 @@ Lo que **no** existe todavía y hay que agregar: `metrics-server`, Prometheus y 
    Lo que se puede deducir no se anota. El commit sale del **tag de la imagen**, que ya es el SHA del commit gracias al CI, y el estado de despliegue sale del `Application` de Argo CD.
 3. **Argo CD**: la API lee los objetos `Application` del namespace `argocd` (`status.sync.status`, `status.health.status`, `status.sync.revision`). Así la ficha muestra "Synced · Healthy · commit a1b2c3d" con enlace al commit en GitHub.
 4. **Métricas**: `metrics-server` para CPU y memoria por pod (fase 3); Prometheus para series de tiempo y el tráfico de Traefik (fases 4 y 5).
-5. **Líneas de tráfico**: `HTTPRoute` (Traefik → servicio) más NetworkPolicies (qué pod puede hablar con cuál), con el grosor según las peticiones por segundo que reporta Traefik.
+5. **Líneas de tráfico**: `HTTPRoute` (Traefik → ruta → servicio), con el brillo según las peticiones por segundo que reporta Traefik.
 
 ## Machine learning
 
@@ -197,10 +197,7 @@ rules:
     resources: ["deployments", "statefulsets", "daemonsets", "replicasets"]
     verbs: ["get", "list", "watch"]
   - apiGroups: ["gateway.networking.k8s.io"]
-    resources: ["httproutes", "gateways"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: ["networking.k8s.io"]
-    resources: ["networkpolicies"]
+    resources: ["httproutes"]
     verbs: ["get", "list", "watch"]
   - apiGroups: ["argoproj.io"]
     resources: ["applications"]
@@ -321,7 +318,7 @@ Cada fase termina con algo publicado y un criterio claro de "listo".
 ### Fase 4: líneas de tráfico
 
 - Instalar Prometheus mínimo y leer las métricas de Traefik (peticiones por `HTTPRoute`).
-- Dibujar las líneas Traefik → servicio con pulsos de luz según el tráfico, y las conexiones permitidas por NetworkPolicy como líneas tenues.
+- Dibujar las líneas Traefik → ruta con una estela y pulsos de luz según el tráfico. (Las conexiones permitidas por NetworkPolicy como líneas tenues se sacaron del alcance.)
 
 **Listo cuando:** abrir el CV varias veces hace que su línea se ilumine.
 

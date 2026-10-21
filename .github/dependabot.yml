@@ -15,3 +15,7 @@ updates:
   - package-ecosystem: docker
     directory: /web
     schedule: { interval: weekly }
+    # Stay on Node's LTS line: major bumps (e.g. 24 -> 25, not LTS) are done by hand.
+    ignore:
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]
