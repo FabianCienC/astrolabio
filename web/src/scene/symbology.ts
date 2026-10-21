@@ -163,10 +163,10 @@ export const TRAFFIC = {
   /** Line brightness with no traffic at all: it stays visible, just faint. */
   idle: 0.15,
   /** Line brightness at full traffic: well above a normal line, so visits are obvious. */
-  busy: 2.5,
-  pulseColor: "#ffd896",
+  busy: 1.6,
+  pulseColor: "#e8b46a",
   /** Brightness of the trail of lights along a line at full traffic. */
-  trailBrightness: 2.6,
+  trailBrightness: 1.6,
   /** Seconds a pulse takes from Traefik to the Service. */
   travelSeconds: 1.8,
   /** Most pulses per second on one path, however busy it is. */
