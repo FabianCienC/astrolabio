@@ -19,7 +19,8 @@ BATCH_SECONDS = 1.0
 # Beyond this, new clients are turned away: each one costs a queue and a socket.
 MAX_CLIENTS = 200
 # Connections one visitor (one IP) may hold, so a single client can't take every slot.
-MAX_PER_VISITOR = 4
+# Generous: a whole home or office shares one public IP (several tabs, several people).
+MAX_PER_VISITOR = 20
 
 
 class Broadcaster:
@@ -59,8 +60,10 @@ class Broadcaster:
         """A queue that starts with the current galaxy; None when full (overall or for this
         visitor) or not synced yet."""
         if len(self._clients) >= self._max_clients:
+            log.warning("/ws: at the limit of %d clients", self._max_clients)
             return None
         if visitor is not None and self._held_by(visitor) >= self._max_per_visitor:
+            log.warning("/ws: visitor at its limit of %d connections", self._max_per_visitor)
             return None
         if self._last_payload is None and not self._refresh():
             return None
