@@ -268,6 +268,21 @@ k auth can-i delete pods --as=system:serviceaccount:astrolabio:astrolabio-api   
 - **Token de ServiceAccount solo en `astrolabio-api`**; los demás pods llevan `automountServiceAccountToken: false`.
 - **Credenciales de AWS** como `SealedSecret`, en un usuario IAM exclusivo con permiso mínimo.
 
+## Atajos de homelab (decisiones conscientes)
+
+Astrolabio corre en un homelab de tres nodos, no en una empresa. Estas decisiones son
+atajos deliberados: razonables aquí, pero en producción se harían distinto. Quedan
+escritas para que se lean como decisiones y no como descuidos.
+
+| Atajo | Por qué aquí | Cómo sería en producción |
+| --- | --- | --- |
+| `metrics-server` con `--kubelet-insecure-tls` | Los certificados de los kubelets de kubeadm son autofirmados; el tráfico va del pod a cada kubelet dentro del clúster | Kubelets con `serverTLSBootstrap: true` y sus CSR aprobados, para que metrics-server verifique el certificado |
+| Prometheus sin disco persistente (`emptyDir`) | Solo guarda 3 días de tráfico; si el pod se reinicia, perder el historial reciente no rompe nada y no hace falta StorageClass | Un `PersistentVolume` (o almacenamiento remoto) para conservar las series |
+| Recarga de Prometheus a mano (`config-version`) | El recargador del chart traía su propia configuración de seguridad; subir la anotación al cambiar la configuración basta para un cambio ocasional | El recargador del chart (`configmapReload`) o un checksum automático de la configuración en el pod |
+| Una sola réplica de la API | El caché vive en memoria y el sitio es una vitrina: si el pod cae, Kubernetes lo levanta en segundos | Varias réplicas con el caché compartido o reconstruido en cada una, y un `PodDisruptionBudget` |
+| `/ws` manda la galaxia completa en cada cambio | Con pocos visitantes es más simple y robusto que deltas (sin protocolo nuevo ni riesgo de desincronizarse), y viaja comprimida | Deltas por objeto (o un snapshot más deltas) si hubiera miles de clientes conectados |
+| Tráfico por *polling* a Prometheus (cada 5 s, ventana de 20 s) | Es como se alimenta un dashboard; una visita se ve en 5–10 s | Para ver cada petición al instante, los registros de acceso de Traefik en streaming |
+
 ## Fases
 
 Cada fase termina con algo publicado y un criterio claro de "listo".

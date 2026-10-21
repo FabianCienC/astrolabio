@@ -1,8 +1,9 @@
 """Requests per second through Traefik, from Prometheus (phase 4), polled.
 
-Prometheus scrapes Traefik every 15 s, so polling faster gains nothing. Without
-it (not installed, unreachable from a laptop, down) the galaxy simply has no
-traffic; nothing else waits on this.
+Prometheus scrapes Traefik every 5 s and this polls as often, so a visit shows in the
+galaxy within seconds: the rate covers the last 20 s, enough samples to be steady and
+short enough to follow clicks. Without Prometheus (not installed, unreachable from a
+laptop, down) the galaxy simply has no traffic; nothing else waits on this.
 """
 
 import asyncio
@@ -13,9 +14,9 @@ import aiohttp
 
 log = logging.getLogger(__name__)
 
-POLL_SECONDS = 15.0
-# Requests per second of each Traefik service over the last minute.
-QUERY = "sum by (service) (rate(traefik_service_requests_total[1m]))"
+POLL_SECONDS = 5.0
+# Requests per second of each Traefik service over the last 20 s (four 5 s scrapes).
+QUERY = "sum by (service) (rate(traefik_service_requests_total[20s]))"
 
 
 class TrafficPoller:

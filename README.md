@@ -66,6 +66,11 @@ Defensa en capas, de afuera hacia adentro:
 - **Cadena de suministro**: dependencias fijadas por hash (`uv.lock`, `package-lock.json`),
   imágenes base fijadas por digest, Trivy en cada build y Dependabot.
 
+Algunas cosas se resolvieron con atajos propios de un homelab (métricas de kubelet sin
+verificar TLS, Prometheus sin disco persistente, una sola réplica de la API…). Son
+decisiones conscientes, documentadas con su versión de producción en
+[`astrolabio.md`](astrolabio.md#atajos-de-homelab-decisiones-conscientes).
+
 ## Despliegue
 
 GitOps, igual que el resto del homelab: un push a `main` corre lint, tests, build, Trivy y

@@ -14,7 +14,7 @@ import {
 } from "three";
 
 import type { DrawnObject, DrawnRelation } from "./morph";
-import { RELATION } from "./symbology";
+import { RELATION, TRAFFIC } from "./symbology";
 
 const COLORS = new Map(RELATION.kinds.map((k) => [k.from, new Color(k.color)]));
 const FALLBACK = new Color("#9b87ff");
@@ -37,7 +37,11 @@ export class RelationLines {
    * Draws each line between its two objects. A line fades with its `weight` and with
    * the less visible of its two ends, so it grows and shrinks along with them.
    */
-  update(objects: DrawnObject[], relations: DrawnRelation[]) {
+  /**
+   * `traffic`: 0..1 level per route id. A Traefik -> route line glows with its route's
+   * traffic (faint with none), so visits show even with no motion at all.
+   */
+  update(objects: DrawnObject[], relations: DrawnRelation[], traffic = new Map<string, number>()) {
     const byId = new Map(objects.map((o) => [o.id, o]));
     const positions: number[] = [];
     const shades: number[] = [];
@@ -45,7 +49,10 @@ export class RelationLines {
       const a = byId.get(from);
       const b = byId.get(to);
       if (!a || !b) continue;
-      const shade = weight * Math.min(a.appear, b.appear);
+      const level = traffic.get(b.id) ?? 0;
+      const ingress =
+        a.kind === "component" ? TRAFFIC.idle + (TRAFFIC.busy - TRAFFIC.idle) * level : 1;
+      const shade = weight * Math.min(a.appear, b.appear) * ingress;
       if (shade <= 0.001) continue;
       positions.push(
         a.position.x,

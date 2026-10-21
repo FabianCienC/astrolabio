@@ -60,6 +60,11 @@ export const RELATION = {
   kinds: [
     { from: "service", label: "Service → los pods que selecciona", color: "#3fd8c6" },
     { from: "route", label: "Ruta → los Services a los que envía tráfico", color: "#9b87ff" },
+    {
+      from: "component",
+      label: "Tráfico de entrada: Traefik → ruta pública (más visitas, más luz y más pulsos)",
+      color: "#ffc46b",
+    },
   ] as { from: ObjectKind; label: string; color: string }[],
 };
 
@@ -146,3 +151,30 @@ export function cpuGlow(
 /** Glow of objects without metrics (Services, routes, rings, or no metrics-server): a calm
  * star, so only what actually works stands out. */
 export const NEUTRAL_GLOW = 0.1;
+
+/**
+ * Incoming traffic (Prometheus, Traefik's requests per second). Lines from Traefik to each
+ * route glow with it on a log scale, so a single visit already shows; light pulses travel
+ * along them (not with reduced motion).
+ */
+export const TRAFFIC = {
+  /** Requests per second that count as full glow: 60 visits a minute is busy for a homelab. */
+  reference: 1,
+  /** Line brightness with no traffic at all: it stays visible, just faint. */
+  idle: 0.15,
+  /** Line brightness at full traffic: well above a normal line, so visits are obvious. */
+  busy: 2.5,
+  pulseColor: "#ffd896",
+  /** Brightness of the trail of lights along a line at full traffic. */
+  trailBrightness: 2.6,
+  /** Seconds a pulse takes from Traefik to the Service. */
+  travelSeconds: 1.8,
+  /** Most pulses per second on one path, however busy it is. */
+  maxRate: 6,
+};
+
+/** 0..1 traffic level of a route from its requests per second (0 without data). */
+export function trafficLevel(rps: number | null | undefined): number {
+  if (!rps) return 0;
+  return Math.min(Math.log10(1 + rps) / Math.log10(1 + TRAFFIC.reference), 1);
+}

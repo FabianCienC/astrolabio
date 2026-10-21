@@ -11,17 +11,20 @@ import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 
 import type { Galaxy } from "../contract/galaxy";
+import { componentId } from "../model/ids";
 import { CameraRig } from "./cameraRig";
 import { SceneLabels } from "./labels";
 import { SelectionHalo } from "./halo";
 import { glowById } from "./glow";
-import { layoutGalaxy, type PlacedObject, type Relation } from "./layout";
+import { type Flow, TrafficPulses } from "./pulses";
+import { type Trail, TrafficTrails } from "./trails";
+import { INGRESS_COMPONENT, layoutGalaxy, type PlacedObject, type Relation } from "./layout";
 import { type DrawnObject, Morph } from "./morph";
 import { Nebulae } from "./nebulae";
 import { MIN_SIZE_PX, ObjectPoints, SIZE_SCALE } from "./objects";
 import { detectQuality, forcedQuality, type Quality, QualityGovernor } from "./quality";
 import { RelationLines } from "./relations";
-import { BACKGROUND, CPU_GLOW, KIND_COLORS, type ObjectKind } from "./symbology";
+import { BACKGROUND, CPU_GLOW, KIND_COLORS, type ObjectKind, trafficLevel } from "./symbology";
 
 export type SceneOptions = {
   /** `prefers-reduced-motion`: no auto-rotation. Transitions stay smooth, just shorter. */
@@ -62,6 +65,10 @@ export class GalaxyScene {
   readonly labels: SceneLabels;
   readonly relations = new RelationLines();
   readonly nebulae: Nebulae;
+  readonly pulses: TrafficPulses;
+  readonly trails: TrafficTrails;
+  /** 0..1 traffic level per route id (Prometheus), for the Traefik -> route lines. */
+  private traffic = new Map<string, number>();
   /** Last measured frames per second, for the debug panel. */
   fps = 0;
 
@@ -116,9 +123,13 @@ export class GalaxyScene {
     this.halo = new SelectionHalo(pixelRatio, options.reducedMotion);
     this.labels = new SceneLabels(this.scene, canvas.parentElement!, options.reducedMotion);
     this.nebulae = new Nebulae(options.reducedMotion);
+    this.pulses = new TrafficPulses(pixelRatio, options.reducedMotion);
+    this.trails = new TrafficTrails(pixelRatio);
     this.scene.add(
       this.nebulae.object,
       this.relations.object,
+      this.pulses.points,
+      this.trails.points,
       this.halo.points,
       this.objects.points,
     );
@@ -174,6 +185,7 @@ export class GalaxyScene {
     this.indexById = new Map(this.placed.map((o, i) => [o.id, i]));
     this.nebulae.update(layout.objects);
     this.labels.update(layout.labels);
+    this.updateTraffic(galaxy, layout.objects);
     const now = performance.now();
     this.morph = new Morph(
       this.drawn,
@@ -188,6 +200,30 @@ export class GalaxyScene {
     this.objects.setSelected(this.indexOf(this.selectedId));
   }
 
+  /** Traffic level of every route, and the paths its requests take, for lines and pulses. */
+  private updateTraffic(galaxy: Galaxy, objects: PlacedObject[]) {
+    const at = new Map(objects.map((o) => [o.id, o.position]));
+    const ingress = at.get(componentId(INGRESS_COMPONENT));
+    this.traffic = new Map();
+    const flows: Flow[] = [];
+    const trails: Trail[] = [];
+    for (const route of galaxy.constellations.flatMap((c) => c.routes)) {
+      const rps = route.traffic.requests_per_second ?? 0;
+      this.traffic.set(route.id, trafficLevel(rps));
+      const routeAt = at.get(route.id);
+      if (ingress && routeAt) trails.push({ from: ingress, to: routeAt, level: trafficLevel(rps) });
+      if (!ingress || !routeAt || rps <= 0) continue;
+      for (const serviceId of route.services) {
+        const serviceAt = at.get(serviceId);
+        if (!serviceAt) continue;
+        const share = rps / route.services.length;
+        flows.push({ from: ingress, route: routeAt, service: serviceAt, rps: share });
+      }
+    }
+    this.pulses.setFlows(flows);
+    this.trails.update(trails);
+  }
+
   /** Moves objects, their lines and the halo one frame along the current morph. */
   private stepMorph(nowMs: number) {
     if (!this.morph) return;
@@ -195,7 +231,7 @@ export class GalaxyScene {
     this.drawn = objects;
     this.placed.forEach((o, i) => o.position.copy(objects[i]!.position));
     this.objects.update(objects);
-    this.relations.update(objects, relations);
+    this.relations.update(objects, relations, this.traffic);
     this.updateHalo();
     if (done) {
       // Settled: keep only what stays on screen, so the next morph starts from it.
@@ -233,6 +269,8 @@ export class GalaxyScene {
     this.labels.dispose();
     this.relations.dispose();
     this.nebulae.dispose();
+    this.pulses.dispose();
+    this.trails.dispose();
     this.composer.dispose();
     this.renderer.dispose();
   }
@@ -334,6 +372,8 @@ export class GalaxyScene {
 
     this.rig.update(nowMs, delta);
     this.nebulae.animate(delta);
+    this.pulses.animate(delta);
+    this.trails.animate(delta);
     this.labels.animate(delta);
     this.nebulae.faceCamera(this.camera);
 

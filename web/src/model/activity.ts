@@ -16,6 +16,7 @@ import type {
 } from "../contract/galaxy";
 import { HEALTH_LABEL, type Health } from "./health";
 import { componentId, namespaceId, nodeId } from "./ids";
+import { perMinute } from "./visits";
 
 export type Tone = "info" | "ok" | "warn" | "bad";
 
@@ -145,6 +146,32 @@ const pods: Rule = (previous, next) => {
   ];
 };
 
+/** A public page starting or stopping to receive visits (Traefik, through Prometheus). */
+const visits: Rule = (previous, next) => {
+  const before = new Map(
+    previous.constellations.flatMap((c) => c.routes.map((r) => [r.id, r] as const)),
+  );
+  return next.constellations.flatMap((c) =>
+    c.routes.flatMap((route): Change[] => {
+      const was = before.get(route.id)?.traffic.requests_per_second ?? 0;
+      const now = route.traffic.requests_per_second ?? 0;
+      if (was <= 0 && now > 0) {
+        return [
+          {
+            text: `${c.project}: recibiendo visitas (${perMinute(now)}/min)`,
+            tone: "ok",
+            targetId: route.id,
+          },
+        ];
+      }
+      if (was > 0 && now <= 0) {
+        return [{ text: `${c.project}: sin visitas por ahora`, tone: "info", targetId: route.id }];
+      }
+      return [];
+    }),
+  );
+};
+
 const argo: Rule = (previous, next) => {
   const before = byId(previous.constellations);
   return next.constellations.flatMap((c) => {
@@ -201,7 +228,7 @@ const core: Rule = (previous, next) => {
 };
 
 /** Add a rule here to log something new. */
-export const RULES: Rule[] = [projects, workloadChanges, pods, argo, core];
+export const RULES: Rule[] = [projects, workloadChanges, pods, visits, argo, core];
 
 export function describeChanges(previous: Galaxy, next: Galaxy): Change[] {
   return RULES.flatMap((rule) => rule(previous, next));

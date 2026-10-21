@@ -86,6 +86,8 @@ Kubernetes manifests do **not** live here. They go in `homelab-gitops` under `wo
 
 0 repo/RBAC/namespace setup → 1 watchers + `GET /api/galaxy` → 2 3D galaxy → 3 WebSocket + metrics-server (CPU → brightness) → 4 Prometheus + Traefik traffic lines → 5 anomalies + Bedrock. Each phase has a concrete "listo cuando" (done-when) check in `astrolabio.md`.
 
+Some choices are deliberate homelab shortcuts (metrics-server `--kubelet-insecure-tls`, Prometheus on `emptyDir` with a manual `config-version` bump, a single API replica, full-galaxy `/ws` messages, traffic by polling Prometheus); they are listed with their production alternative in `astrolabio.md` ("Atajos de homelab"). Don't "fix" them unasked, and add new shortcuts there.
+
 For local API development, run `uvicorn` against the cluster as the real `astrolabio-api` identity (never an admin kubeconfig, so missing RBAC shows up locally):
 
 1. Tunnel: the Proxmox firewall only lets the VMs be reached through `pve`. Use **Windows' OpenSSH** (`C:\Windows\System32\OpenSSH\ssh.exe -N -L 127.0.0.1:6443:192.168.0.41:6443 pve`): the key lives in the Windows ssh-agent, which Git Bash's `ssh` can't see.

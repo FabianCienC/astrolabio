@@ -4,7 +4,8 @@ import type { ArgoStatus, Commit, Metrics, Pod, Replicas } from "../contract/gal
 import type { Entry, GalaxyIndex } from "../model/galaxyIndex";
 import { type Health, HEALTH_LABEL } from "../model/health";
 import { componentId, namespaceId } from "../model/ids";
-import { cpuGlow, KIND, type ObjectKind } from "../scene/symbology";
+import { perMinute } from "../model/visits";
+import { cpuGlow, KIND, type ObjectKind, trafficLevel } from "../scene/symbology";
 import { KindSymbol } from "./KindSymbol";
 
 type Props = { entry: Entry; index: GalaxyIndex; onSelect: (id: string) => void };
@@ -117,6 +118,7 @@ function fields(entry: Entry, index: GalaxyIndex, link: (id: string) => ReactNod
         <>
           <Row label="Estado"><HealthBadge health={entry.service.health} /></Row>
           <Row label="Envía tráfico a"><List ids={entry.service.targets} link={link} /></Row>
+          <VisitsRow rps={entry.service.traffic.requests_per_second} />
           {routes.length > 0 && <Row label="Expuesto por"><List ids={routes.map((r) => r.id)} link={link} /></Row>}
         </>
       );
@@ -133,6 +135,7 @@ function fields(entry: Entry, index: GalaxyIndex, link: (id: string) => ReactNod
             </ul>
           </Row>
           <Row label="Services"><List ids={entry.route.services} link={link} /></Row>
+          <VisitsRow rps={entry.route.traffic.requests_per_second} />
         </>
       );
     case "component": {
@@ -265,6 +268,36 @@ export function CpuMeter({ kind, cpu }: { kind: ObjectKind; cpu: number }) {
         <span style={{ width: `${Math.round(glow * 100)}%` }} />
       </span>
       {cpu} m
+    </span>
+  );
+}
+
+/** Requests per minute, measured by Traefik (Prometheus); nothing until there is data. */
+function VisitsRow({ rps }: { rps: number | null }) {
+  if (rps === null) return <Row label="Visitas">Sin visitas recientes</Row>;
+  return (
+    <Row label="Visitas">
+      <TrafficMeter rps={rps} />
+    </Row>
+  );
+}
+
+/** Requests per minute as a bar, on the same scale as the Traefik line's glow. */
+export function TrafficMeter({ rps }: { rps: number }) {
+  const level = trafficLevel(rps);
+  return (
+    <span className="cpu-meter traffic-meter">
+      <span
+        className="cpu-meter-bar"
+        role="meter"
+        aria-label="Visitas por minuto"
+        aria-valuemin={0}
+        aria-valuemax={1}
+        aria-valuenow={level}
+      >
+        <span style={{ width: `${Math.round(level * 100)}%` }} />
+      </span>
+      {perMinute(rps)} / min
     </span>
   );
 }

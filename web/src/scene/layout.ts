@@ -49,6 +49,8 @@ export const systemGroup = (system: string) => `core/${system}`;
 export const isCoreGroup = (group: string) => group === CORE_GROUP || group.startsWith("core/");
 
 const PROJECT_RING = 56;
+/** The core component every public request goes through. */
+export const INGRESS_COMPONENT = "traefik";
 const WORKLOAD_RADIUS = 4;
 const REPLICASET_OFFSET = 2.1;
 /** How far pods sit from their owner: wide enough that halos never merge them. */
@@ -207,6 +209,14 @@ export function layoutGalaxy(galaxy: Galaxy): Layout {
       kind: "system",
       position: around(origin, SYSTEM_RING + radius + 2.6, angle),
     });
+  }
+
+  // Real traffic enters through Traefik: a line from it to every public route.
+  const ingress = galaxy.core.components.find((c) => c.id === INGRESS_COMPONENT);
+  if (ingress) {
+    for (const route of galaxy.constellations.flatMap((c) => c.routes)) {
+      build.relations.push([componentId(ingress.id), route.id]);
+    }
   }
 
   return { objects: build.objects, relations: build.relations, labels: build.labels };
