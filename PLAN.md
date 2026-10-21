@@ -64,9 +64,9 @@ Puede empezar en cuanto exista el contrato (E1.1).
 
 ## E3 · En vivo (fase 3)
 
-- [ ] Probar temprano que el WebSocket pasa por Gateway + Traefik + Cloudflare Tunnel.
+- [x] Probar temprano que el WebSocket pasa por Gateway + Traefik + Cloudflare Tunnel. 2026-10-21: `wss://astrolabio.fabiancienfuegos.com/ws` entrega la galaxia, sigue abierto pasados 120 s (los pings de uvicorn le ganan al corte de 100 s de Cloudflare) y rechaza otros orígenes con 403.
 - [x] `/ws`: la API empuja la **galaxia completa** sanitizada (los mismos modelos que `GET /api/galaxy`) cada vez que cambia, agrupando los cambios en ventanas de 1 s y omitiendo los que no cambian nada (decidido el 2026-10-21: más simple y robusto que deltas por objeto, sin protocolo nuevo ni riesgo de desincronizarse; `live.py`, `routes/ws.py`). Solo el origen del sitio, máx. 200 clientes, mensajes entrantes descartados.
-- [ ] Cliente: galaxia inicial por `GET /api/galaxy` y luego `/ws`; la escena anima solo lo que cambió; reconexión con espera creciente (al reconectar llega la galaxia actual).
+- [ ] Cliente: galaxia inicial por `GET /api/galaxy` y luego `/ws`; la escena anima solo lo que cambió; reconexión con espera creciente (al reconectar llega la galaxia actual). **Hecho, falta tu visto bueno:** transición sin saltos (`morph.ts`: objetos, líneas, nebulosas y nombres), indicador "conectado", panel de actividad abajo a la derecha (`model/activity.ts`, reglas fáciles de extender).
 - [ ] `metrics-server` por Helm; CPU por pod → brillo de la estrella.
 
 **Listo cuando:** un push a `hola` cambia su estrella en vivo, sin recargar, mientras Argo CD despliega.

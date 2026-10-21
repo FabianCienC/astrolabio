@@ -39,6 +39,8 @@ const fragmentShader = /* glsl */ `
   uniform vec3 uColor;
   uniform float uSeed;
   uniform float uIntensity;
+  // 0..1 while this nebula fades in or out with a live update.
+  uniform float uAppear;
   varying vec2 vUv;
 
   float hash(vec2 p) {
@@ -71,9 +73,21 @@ const fragmentShader = /* glsl */ `
     vec2 p = vUv - 0.5;
     float falloff = pow(smoothstep(0.5, 0.0, length(p)), 1.6);
     float density = falloff * smoothstep(0.3, 0.85, fbm(p * 3.5 + uSeed));
-    gl_FragColor = vec4(uColor * density * uIntensity, 1.0);
+    gl_FragColor = vec4(uColor * density * uIntensity * uAppear, 1.0);
   }
 `;
+
+/** How fast a nebula drifts to its new place and size, and fades in or out (per second). */
+const FOLLOW = 2.2;
+const REDUCED_FOLLOW = 5;
+
+type Cloud = {
+  mesh: Mesh<PlaneGeometry, ShaderMaterial>;
+  center: Vector3;
+  radius: number;
+  /** 1 while its group exists; 0 once it is gone (the cloud fades out, then is removed). */
+  visible: number;
+};
 
 export class Nebulae {
   readonly object = new Group();
@@ -81,10 +95,18 @@ export class Nebulae {
   baseIntensity = NEBULA.intensity;
   /** Shared uniform of every nebula, so they all change together. */
   private readonly intensity = { value: NEBULA.intensity };
+  private readonly clouds = new Map<string, Cloud>();
 
+  constructor(private readonly reducedMotion = false) {}
+
+  /**
+   * Sets where each group's nebula should be. Existing ones drift there, new ones fade
+   * in in place, and ones whose group is gone fade out (see `animate`).
+   */
   update(objects: PlacedObject[]) {
-    this.clear();
-    for (const [group, members] of groupObjects(objects)) {
+    const groups = groupObjects(objects);
+    for (const [group, cloud] of this.clouds) if (!groups.has(group)) cloud.visible = 0;
+    for (const [group, members] of groups) {
       const center = members
         .reduce((sum, m) => sum.add(m.position), new Vector3())
         .divideScalar(members.length);
@@ -93,26 +115,32 @@ export class Nebulae {
         core ? MIN_CORE_RADIUS : MIN_RADIUS,
         ...members.map((m) => m.position.distanceTo(center) * SPREAD),
       );
-      const hash = hashString(group);
-      const mesh = new Mesh(
-        new PlaneGeometry(radius * 2, radius * 2),
-        new ShaderMaterial({
-          vertexShader,
-          fragmentShader,
-          uniforms: {
-            uColor: { value: nebulaColor(core, hash) },
-            uSeed: { value: (hash % 1000) / 37 },
-            uIntensity: this.intensity,
-          },
-          blending: AdditiveBlending,
-          transparent: true,
-          depthWrite: false,
-          side: DoubleSide,
-        }),
-      );
-      mesh.position.copy(center);
-      mesh.renderOrder = -1; // behind objects and lines
-      this.object.add(mesh);
+      const cloud = this.clouds.get(group);
+      if (cloud) {
+        cloud.center.copy(center);
+        cloud.radius = radius;
+        cloud.visible = 1;
+      } else {
+        this.add(group, core, center, radius);
+      }
+    }
+  }
+
+  /** Eases every nebula toward where it should be; call once per frame. */
+  animate(deltaSeconds: number) {
+    const k = 1 - Math.exp(-(this.reducedMotion ? REDUCED_FOLLOW : FOLLOW) * deltaSeconds);
+    for (const [group, cloud] of this.clouds) {
+      const { mesh } = cloud;
+      mesh.position.lerp(cloud.center, k);
+      mesh.scale.setScalar(mesh.scale.x + (cloud.radius - mesh.scale.x) * k);
+      const appear = mesh.material.uniforms.uAppear!;
+      appear.value += (cloud.visible - appear.value) * k;
+      if (cloud.visible === 0 && appear.value < 0.005) {
+        mesh.geometry.dispose();
+        mesh.material.dispose();
+        this.object.remove(mesh);
+        this.clouds.delete(group);
+      }
     }
   }
 
@@ -127,14 +155,38 @@ export class Nebulae {
   }
 
   dispose() {
-    this.clear();
+    for (const { mesh } of this.clouds.values()) {
+      mesh.geometry.dispose();
+      mesh.material.dispose();
+    }
+    this.clouds.clear();
+    this.object.clear();
   }
 
-  private clear() {
-    for (const mesh of this.object.children as Mesh[]) {
-      mesh.geometry.dispose();
-      (mesh.material as ShaderMaterial).dispose();
-    }
-    this.object.clear();
+  private add(group: string, core: boolean, center: Vector3, radius: number) {
+    const hash = hashString(group);
+    // A unit plane scaled to the radius, so the size can ease without rebuilding it.
+    const mesh = new Mesh(
+      new PlaneGeometry(2, 2),
+      new ShaderMaterial({
+        vertexShader,
+        fragmentShader,
+        uniforms: {
+          uColor: { value: nebulaColor(core, hash) },
+          uSeed: { value: (hash % 1000) / 37 },
+          uIntensity: this.intensity,
+          uAppear: { value: 0 },
+        },
+        blending: AdditiveBlending,
+        transparent: true,
+        depthWrite: false,
+        side: DoubleSide,
+      }),
+    );
+    mesh.position.copy(center);
+    mesh.scale.setScalar(radius);
+    mesh.renderOrder = -1; // behind objects and lines
+    this.object.add(mesh);
+    this.clouds.set(group, { mesh, center: center.clone(), radius, visible: 1 });
   }
 }

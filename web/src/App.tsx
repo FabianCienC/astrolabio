@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 
+import { ActivityLog } from "./components/ActivityLog";
 import { HoverCard } from "./components/HoverCard";
 import { Legend } from "./components/Legend";
 import { ListView } from "./components/ListView";
@@ -7,6 +8,7 @@ import { SceneCanvas } from "./components/SceneCanvas";
 import { Sidebar } from "./components/Sidebar";
 import type { Galaxy } from "./contract/galaxy";
 import { GalaxyIndex } from "./model/galaxyIndex";
+import { useActivity } from "./model/useActivity";
 import { useGalaxy } from "./model/useGalaxy";
 import type { Hover } from "./scene/GalaxyScene";
 
@@ -26,20 +28,31 @@ export function App() {
       </div>
     );
   }
-  return <GalaxyView galaxy={state.galaxy} example={state.example} />;
+  return <GalaxyView galaxy={state.galaxy} example={state.example} live={state.live} />;
 }
 
-function Title() {
+/** `live`: whether `/ws` is connected. Undefined before there is a galaxy at all. */
+function Title({ live }: { live?: boolean }) {
   return (
     <h1 className="title">
       Astrolabio
-      <small>el homelab, en vivo</small>
+      <small>
+        el homelab, en vivo
+        {live !== undefined && (
+          <span className={`live-dot${live ? " live-dot-on" : ""}`} role="status">
+            {live ? "conectado" : "reconectando…"}
+          </span>
+        )}
+      </small>
     </h1>
   );
 }
 
-function GalaxyView({ galaxy, example }: { galaxy: Galaxy; example: boolean }) {
+type GalaxyViewProps = { galaxy: Galaxy; example: boolean; live: boolean };
+
+function GalaxyView({ galaxy, example, live }: GalaxyViewProps) {
   const index = useMemo(() => new GalaxyIndex(galaxy), [galaxy]);
+  const activity = useActivity(galaxy, live, example);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hover, setHover] = useState<Hover | null>(null);
   // `?view=list` opens the list directly (a link to the accessible view).
@@ -66,7 +79,7 @@ function GalaxyView({ galaxy, example }: { galaxy: Galaxy; example: boolean }) {
           onUnavailable={() => setWebgl(false)}
         />
         {!showList && <HoverCard index={index} hover={hover} />}
-        <Title />
+        <Title live={example ? undefined : live} />
         {example && <p className="example-notice">Datos de ejemplo: no hay API local</p>}
         {webgl && (
           <button
@@ -92,6 +105,7 @@ function GalaxyView({ galaxy, example }: { galaxy: Galaxy; example: boolean }) {
         ) : (
           <Legend />
         )}
+        <ActivityLog entries={activity} onSelect={setSelectedId} />
       </main>
       <Sidebar index={index} selectedId={selectedId} onSelect={setSelectedId} />
     </div>

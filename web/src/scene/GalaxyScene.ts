@@ -14,7 +14,8 @@ import type { Galaxy } from "../contract/galaxy";
 import { CameraRig } from "./cameraRig";
 import { SceneLabels } from "./labels";
 import { SelectionHalo } from "./halo";
-import { layoutGalaxy, type PlacedObject } from "./layout";
+import { layoutGalaxy, type PlacedObject, type Relation } from "./layout";
+import { type DrawnObject, Morph } from "./morph";
 import { Nebulae } from "./nebulae";
 import { MIN_SIZE_PX, ObjectPoints, SIZE_SCALE } from "./objects";
 import { detectQuality, forcedQuality, type Quality, QualityGovernor } from "./quality";
@@ -59,7 +60,7 @@ export class GalaxyScene {
   readonly halo: SelectionHalo;
   readonly labels: SceneLabels;
   readonly relations = new RelationLines();
-  readonly nebulae = new Nebulae();
+  readonly nebulae: Nebulae;
   /** Last measured frames per second, for the debug panel. */
   fps = 0;
 
@@ -68,6 +69,12 @@ export class GalaxyScene {
   private readonly resizeObserver: ResizeObserver;
   private readonly options: SceneOptions;
   private placed: PlacedObject[] = [];
+  /** What is on screen now (objects with how far they have grown, and lines): every morph
+   * starts from here. */
+  private drawn: DrawnObject[] = [];
+  private drawnRelations: Relation[] = [];
+  /** Live update in progress, if any. */
+  private morph: Morph | null = null;
   private indexById = new Map<string, number>();
   private selectedId: string | null = null;
   private pointerDown: { x: number; y: number } | null = null;
@@ -103,7 +110,8 @@ export class GalaxyScene {
 
     this.objects = new ObjectPoints(pixelRatio);
     this.halo = new SelectionHalo(pixelRatio, options.reducedMotion);
-    this.labels = new SceneLabels(this.scene, canvas.parentElement!);
+    this.labels = new SceneLabels(this.scene, canvas.parentElement!, options.reducedMotion);
+    this.nebulae = new Nebulae(options.reducedMotion);
     this.scene.add(
       this.nebulae.object,
       this.relations.object,
@@ -134,16 +142,45 @@ export class GalaxyScene {
     this.renderer.setAnimationLoop((time) => this.frame(time));
   }
 
+  /**
+   * Shows a galaxy. Every call morphs from what is on screen (the first one from an
+   * empty sky), so neither the first load nor a live update ever jumps.
+   */
   load(galaxy: Galaxy) {
     const layout = layoutGalaxy(galaxy);
-    this.placed = layout.objects;
-    this.indexById = new Map(layout.objects.map((o, i) => [o.id, i]));
-    this.objects.update(layout.objects);
-    this.relations.update(layout);
+    // During a morph these positions move every frame; the layout's own stay the targets.
+    this.placed = layout.objects.map((o) => ({ ...o, position: o.position.clone() }));
+    this.indexById = new Map(this.placed.map((o, i) => [o.id, i]));
     this.nebulae.update(layout.objects);
     this.labels.update(layout.labels);
+    const now = performance.now();
+    this.morph = new Morph(
+      this.drawn,
+      this.drawnRelations,
+      layout.objects,
+      layout.relations,
+      now,
+      this.options.reducedMotion,
+    );
+    this.drawnRelations = layout.relations;
+    this.stepMorph(now);
     this.objects.setSelected(this.indexOf(this.selectedId));
+  }
+
+  /** Moves objects, their lines and the halo one frame along the current morph. */
+  private stepMorph(nowMs: number) {
+    if (!this.morph) return;
+    const { objects, relations, done } = this.morph.frame(nowMs);
+    this.drawn = objects;
+    this.placed.forEach((o, i) => o.position.copy(objects[i]!.position));
+    this.objects.update(objects);
+    this.relations.update(objects, relations);
     this.updateHalo();
+    if (done) {
+      // Settled: keep only what stays on screen, so the next morph starts from it.
+      this.drawn = objects.slice(0, this.placed.length);
+      this.morph = null;
+    }
   }
 
   /** Highlights an object and flies to it; `null` clears the selection and flies home. */
@@ -275,6 +312,8 @@ export class GalaxyScene {
     this.lastFrame = nowMs;
 
     this.rig.update(nowMs, delta);
+    this.nebulae.animate(delta);
+    this.labels.animate(delta);
     this.nebulae.faceCamera(this.camera);
 
     // Hover: only while no button is held, so orbiting doesn't flicker the highlight.
@@ -282,6 +321,7 @@ export class GalaxyScene {
       this.pointer && !this.pointerDown ? this.pick(this.pointer.x, this.pointer.y) : -1;
     this.objects.setHovered(hovered);
     this.notifyHover(hovered);
+    this.stepMorph(nowMs);
     this.objects.animate(delta);
     this.halo.animate(delta, nowMs / 1000);
     // The rest of the scene steps back together with the objects while something is selected.

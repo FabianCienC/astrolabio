@@ -6,7 +6,10 @@ export default defineConfig({
   server: {
     // The fixture lives in ../contract, outside the web root.
     fs: { allow: [".", "../contract"] },
-    // In dev, /api goes to a local uvicorn (same origin as in production).
-    proxy: { "/api": "http://127.0.0.1:8000" },
+    // In dev, /api and /ws go to a local uvicorn (same origin as in production).
+    proxy: {
+      "/api": "http://127.0.0.1:8000",
+      "/ws": { target: "ws://127.0.0.1:8000", ws: true },
+    },
   },
 });

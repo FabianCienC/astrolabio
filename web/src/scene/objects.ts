@@ -42,6 +42,8 @@ const vertexShader = /* glsl */ `
   attribute float aSize;
   attribute float aShape;
   attribute float aIndex;
+  // 0..1 while an object grows in or shrinks away during a live update (see morph.ts).
+  attribute float aAppear;
   attribute vec3 aColor;
   varying vec3 vColor;
   varying float vShape;
@@ -62,10 +64,10 @@ const vertexShader = /* glsl */ `
     // back) and the selected object outshines it all, tinted toward white.
     float rest = ${BASE_BRIGHTNESS.toFixed(2)} * mix(1.0, ${DIMMED.toFixed(2)}, uFocus);
     float brightness = mix(mix(rest, ${BASE_BRIGHTNESS.toFixed(2)}, hovered), ${SELECTED_BRIGHTNESS.toFixed(2)}, selected);
-    vColor = mix(aColor, vec3(1.0), 0.12 * selected) * brightness;
+    vColor = mix(aColor, vec3(1.0), 0.12 * selected) * brightness * aAppear;
     vShape = aShape;
     float size = uSize * aSize * (1.0 + ${SELECTED_GROWTH.toFixed(2)} * selected + ${HOVERED_GROWTH.toFixed(2)} * hovered);
-    gl_PointSize = max(size * uPixelRatio * (420.0 / -mvPosition.z), 5.0 * uPixelRatio);
+    gl_PointSize = max(size * uPixelRatio * (420.0 / -mvPosition.z), 5.0 * uPixelRatio) * aAppear;
     vPixels = gl_PointSize;
   }
 `;
@@ -172,8 +174,9 @@ export class ObjectPoints {
     this.points.frustumCulled = false;
   }
 
-  /** Replaces every object. Cheap at this scale (a few hundred points at most). */
-  update(objects: PlacedObject[]) {
+  /** Replaces every object. Cheap at this scale (a few hundred points at most), so a live
+   * update can call it every frame while objects move. */
+  update(objects: (PlacedObject & { appear?: number })[]) {
     const attribute = (values: number[], size = 1) => new Float32BufferAttribute(values, size);
     const positions = objects.flatMap((o) => [o.position.x, o.position.y, o.position.z]);
     const colors = objects.flatMap((o) => KIND_COLORS[o.kind].toArray());
@@ -182,6 +185,7 @@ export class ObjectPoints {
     this.geometry.setAttribute("aSize", attribute(objects.map((o) => o.size)));
     this.geometry.setAttribute("aShape", attribute(objects.map((o) => o.shape)));
     this.geometry.setAttribute("aIndex", attribute(objects.map((_, i) => i)));
+    this.geometry.setAttribute("aAppear", attribute(objects.map((o) => o.appear ?? 1)));
   }
 
   /** Index into the last `update` list, or -1 for none. */

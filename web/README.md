@@ -49,15 +49,19 @@ React: App ─┬► components/SceneCanvas ─► scene/GalaxyScene ─► layo
 | `src/components/SceneCanvas.tsx` | Mounts `GalaxyScene` on a `<canvas>` and owns its lifecycle; reports `onUnavailable` when there is no WebGL. React never touches Three.js objects. |
 | `src/contract/galaxy.ts` | Types generated from the API's JSON Schema. **Do not edit.** |
 | `src/contract/fixture.ts` | The example galaxy, typed. Dev only: used when there is no local API (and the page says so); never in the production bundle. |
-| `src/model/useGalaxy.ts` | Loads `GET /api/galaxy` (same origin), retrying while the API answers 503 (informers syncing). Production never falls back to the example. |
+| `src/model/useGalaxy.ts` | Loads `GET /api/galaxy` (same origin, retrying while the API answers 503), then keeps it live through `/ws` (full galaxy per change; reconnects 1 s → 30 s). Production never falls back to the example. |
+| `src/model/activity.ts` | Activity log rules: what changed between two galaxies, as short Spanish lines (projects, workloads, versions, replicas, project pods, restarts, Argo CD, platform components, nodes). **Add a rule to `RULES` to log something new.** Derived in the browser; the API publishes nothing extra. |
+| `src/model/useActivity.ts` | Feeds the log: one entry per change, plus the live connection coming and going (newest first, last 50). |
+| `src/components/ActivityLog.tsx` | Bottom-right activity panel: closed, a pill with the latest entry; open, the history. Clicking an entry selects its object. |
 | `src/scene/GalaxyScene.ts` | The scene's public API (`load`, `select`, `dispose`, `onSelect`): renderer, picking, highlights, bloom, render loop. |
 | `src/scene/cameraRig.ts` | All camera movement, always smooth: gliding wheel zoom toward the cursor, eased flights (to an object and back home), damped orbit, pan on the galaxy plane with a limit. |
 | `src/scene/halo.ts` | Ring halo around the selected object: grows in, follows the selection, breathes slowly, fades out. |
-| `src/scene/labels.ts` | Floating names of projects and platform systems (CSS2DRenderer over the canvas). |
+| `src/scene/labels.ts` | Floating names of projects and platform systems (CSS2DRenderer over the canvas). Keyed by id: they drift and fade in or out on live updates. |
 | `src/scene/layout.ts` | Pure: galaxy → positioned objects + relations. Position encodes ownership (pods around their replica set, by their workload, around the namespace ring). Deterministic. |
 | `src/scene/objects.ts` | Every k8s object as one `Points`: flat shapes by kind, color by kind; selected brightens, hovered grows, the rest dims while something is selected. |
-| `src/scene/relations.ts` | Lines for real relations only: Service → pods it selects, route → services. |
-| `src/scene/nebulae.ts` | Soft fbm nebula behind each group, camera-facing, from the cool nebula palette. |
+| `src/scene/relations.ts` | Lines for real relations only: Service → pods it selects, route → services. Each line fades with its morph weight and its ends. |
+| `src/scene/morph.ts` | Live updates without jumps: objects glide to their new place, new ones grow in, gone ones shrink away, lines fade (1.4 s, 0.6 s with reduced motion, eased both ends). Every morph starts from what is on screen, so updates arriving mid-transition never jump. |
+| `src/scene/nebulae.ts` | Soft fbm nebula behind each group, camera-facing, from the cool nebula palette. Keyed by group: they drift to their new center and size and fade in or out on live updates. |
 | `src/scene/symbology.ts` | What every visual means: object kinds (shape, size, color, label), relation line and nebula styles, background. **Add new symbols here.** |
 | `src/scene/quality.ts` | Quality levels (high, low, minimal: pixel ratio and bloom strength; bloom never turns off). Picked on load, then `QualityGovernor` steps down while fps stays under the level's minimum (never back up). `?quality=` forces a level. |
 | `src/scene/random.ts` | Seeded PRNG and string hash for deterministic layout. |

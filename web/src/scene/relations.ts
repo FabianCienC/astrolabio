@@ -13,7 +13,7 @@ import {
   LineSegments,
 } from "three";
 
-import type { Layout } from "./layout";
+import type { DrawnObject, DrawnRelation } from "./morph";
 import { RELATION } from "./symbology";
 
 export class RelationLines {
@@ -25,20 +25,39 @@ export class RelationLines {
     transparent: true,
     blending: AdditiveBlending,
     depthWrite: false,
+    // Per-vertex gray scales each line: with additive blending, darker means fainter.
+    vertexColors: true,
   });
   readonly object = new LineSegments(new BufferGeometry(), this.material);
 
-  update({ objects, relations }: Layout) {
-    const byId = new Map(objects.map((o) => [o.id, o.position]));
+  /**
+   * Draws each line between its two objects. A line fades with its `weight` and with
+   * the less visible of its two ends, so it grows and shrinks along with them.
+   */
+  update(objects: DrawnObject[], relations: DrawnRelation[]) {
+    const byId = new Map(objects.map((o) => [o.id, o]));
     const positions: number[] = [];
-    for (const [from, to] of relations) {
+    const shades: number[] = [];
+    for (const { from, to, weight } of relations) {
       const a = byId.get(from);
       const b = byId.get(to);
-      if (a && b) positions.push(a.x, a.y, a.z, b.x, b.y, b.z);
+      if (!a || !b) continue;
+      const shade = weight * Math.min(a.appear, b.appear);
+      if (shade <= 0.001) continue;
+      positions.push(
+        a.position.x,
+        a.position.y,
+        a.position.z,
+        b.position.x,
+        b.position.y,
+        b.position.z,
+      );
+      shades.push(shade, shade, shade, shade, shade, shade);
     }
     this.object.geometry.dispose();
     this.object.geometry = new BufferGeometry();
     this.object.geometry.setAttribute("position", new Float32BufferAttribute(positions, 3));
+    this.object.geometry.setAttribute("color", new Float32BufferAttribute(shades, 3));
   }
 
   /** `focus` 0..1: how much a selection pushes the lines into the background. */

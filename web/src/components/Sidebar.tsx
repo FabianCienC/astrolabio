@@ -28,6 +28,14 @@ export function Sidebar({ index, selectedId, onSelect }: Props) {
           </button>
           <ObjectDetails entry={entry} index={index} onSelect={onSelect} />
         </div>
+      ) : selectedId ? (
+        // A live update removed it (a pod replaced in a rollout, say): say so, don't jump away.
+        <div key="gone" className="fade-in">
+          <button type="button" className="back" onClick={() => onSelect(null)}>
+            ← Vista general
+          </button>
+          <p className="note">Este objeto ya no está en el clúster.</p>
+        </div>
       ) : (
         <div className="fade-in">
           <Overview index={index} onSelect={onSelect} />

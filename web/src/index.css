@@ -679,3 +679,137 @@ code {
   font-size: 12px;
   transform: translateX(-50%);
 }
+
+/* Live stream state, after the subtitle: a small dot, green while /ws is connected. */
+.live-dot {
+  margin-left: 10px;
+  color: var(--text-dim);
+  transition: color 400ms ease;
+}
+
+.live-dot::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--unknown);
+  vertical-align: 1px;
+  transition: background-color 400ms ease;
+}
+
+.live-dot-on::before {
+  background: var(--ok);
+}
+
+/* Activity: bottom-right of the scene. Closed, a pill with the latest entry. */
+
+.activity {
+  position: absolute;
+  z-index: 3;
+  right: 16px;
+  bottom: 16px;
+  width: min(360px, calc(100% - 32px));
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+  backdrop-filter: blur(6px);
+  font-size: 12px;
+}
+
+.activity:not([open]) {
+  width: auto;
+  max-width: min(360px, calc(100% - 32px));
+}
+
+.activity summary {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+  cursor: pointer;
+}
+
+/* Flex drops the native marker: draw the same triangle as the legend's. */
+.activity summary::-webkit-details-marker {
+  display: none;
+}
+
+.activity-title::before {
+  content: "▸ ";
+}
+
+.activity[open] .activity-title::before {
+  content: "▾ ";
+}
+
+.activity-title {
+  flex: none;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.activity-latest {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activity-list {
+  max-height: 210px;
+  margin: 8px 0 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.activity-list li {
+  display: flex;
+  gap: 10px;
+  padding: 3px 0;
+  line-height: 1.35;
+}
+
+.activity-list time {
+  flex: none;
+  font-family: "JetBrains Mono", ui-monospace, "Cascadia Code", monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.activity-list button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.activity-list button:hover,
+.activity-list button:focus-visible {
+  text-decoration: underline;
+}
+
+/* The tone colors the text lightly; health words stay readable as text. */
+.tone-ok {
+  color: var(--ok);
+}
+
+.tone-warn {
+  color: var(--degraded);
+}
+
+.tone-bad {
+  color: var(--down);
+}
+
+.tone-info {
+  color: var(--text);
+}
