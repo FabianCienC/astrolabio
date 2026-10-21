@@ -1,34 +1,26 @@
-"""App FastAPI. Solo lectura: no hay endpoints que no sean GET.
+"""Entry point: builds the FastAPI app and wires the layers together.
 
 uv run uvicorn astrolabio_api.main:app --reload
 """
 
-import os
-
 from fastapi import FastAPI
 
-from .ejemplo import galaxia_de_ejemplo
-from .modelos import Galaxia
+from .config import Settings
+from .routes import galaxy
 
 
-def crear_app(*, desarrollo: bool | None = None) -> FastAPI:
-    if desarrollo is None:
-        desarrollo = os.environ.get("ASTROLABIO_ENTORNO") == "desarrollo"
+def create_app(settings: Settings | None = None) -> FastAPI:
+    settings = settings or Settings.from_env()
 
-    # /docs y /openapi.json solo existen en desarrollo; el sitio es público.
+    # The site is public: the schema and interactive docs only exist in development.
     app = FastAPI(
         title="Astrolabio",
-        docs_url="/docs" if desarrollo else None,
+        docs_url="/docs" if settings.is_development else None,
         redoc_url=None,
-        openapi_url="/openapi.json" if desarrollo else None,
+        openapi_url="/openapi.json" if settings.is_development else None,
     )
-
-    @app.get("/api/galaxia", response_model=Galaxia)
-    async def galaxia() -> Galaxia:
-        # Provisional hasta los informers (E1.3–E1.5): sirve la galaxia de ejemplo.
-        return galaxia_de_ejemplo()
-
+    app.include_router(galaxy.router)
     return app
 
 
-app = crear_app()
+app = create_app()

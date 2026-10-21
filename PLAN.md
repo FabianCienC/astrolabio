@@ -6,7 +6,7 @@ Programa de etapas para construir Astrolabio. El alcance, las decisiones y los c
 
 ## Idea central: contrato primero
 
-Lo primero de la etapa 1 es fijar el **esquema de `GET /api/galaxia`** (modelos Pydantic) y exportarlo a `contrato/` en la raíz del repo: `galaxia.schema.json` (JSON Schema, del que el frontend genera sus tipos) y `galaxia.ejemplo.json` (fixture). Con eso el frontend 3D avanza contra datos falsos sin esperar a que la API esté desplegada, y las etapas 1 y 2 pueden traslaparse.
+Lo primero de la etapa 1 es fijar el **esquema de `GET /api/galaxy`** (modelos Pydantic) y exportarlo a `contract/` en la raíz del repo: `galaxy.schema.json` (JSON Schema, del que el frontend genera sus tipos) y `galaxy.example.json` (fixture). Con eso el frontend 3D avanza contra datos falsos sin esperar a que la API esté desplegada, y las etapas 1 y 2 pueden traslaparse.
 
 ```
 E0 ──► E1.1 contrato ──┬──► resto de E1 (API) ──┐
@@ -16,7 +16,7 @@ E0 ──► E1.1 contrato ──┬──► resto de E1 (API) ──┐
 ## Decisión de frontend: React + TypeScript, Three.js directo
 
 - **React** para la interfaz alrededor de la escena: ficha de la estrella, vista de lista accesible y controles. Funciona con Vite sin configuración extra y tiene el ecosistema más grande alrededor de Three.js.
-- **La escena es un módulo TypeScript con Three.js puro** (`web/src/escena/`), sin React Three Fiber. React lo monta en un `<canvas>` y se comunica con él por una API pequeña: `cargar(galaxia)`, `aplicarDelta(delta)`, `enfocar(id)` y eventos de selección.
+- **La escena es un módulo TypeScript con Three.js puro** (`web/src/scene/`), sin React Three Fiber. React lo monta en un `<canvas>` y se comunica con él por una API pequeña: `load(galaxy)`, `applyDelta(delta)`, `focus(id)` y eventos de selección.
 - **Por qué sin R3F:** casi todo es shader propio, `Points` e `InstancedMesh`, y los deltas del WebSocket (fase 3) deben escribir directo en los buffers sin pasar por la reconciliación de React. Además, la técnica del diseño (`EffectComposer` + `UnrealBloomPass`) se usa tal cual. Si más adelante R3F conviene para algo, se puede adoptar sin rehacer la UI.
 
 ## E0 · Preparar el terreno (fase 0)
@@ -33,18 +33,18 @@ E0 ──► E1.1 contrato ──┬──► resto de E1 (API) ──┐
 
 ## E1 · Contrato + API (fase 1)
 
-1. [x] **Contrato:** esqueleto de `api/` con **uv** (`uv init`, Python 3.13, `uv.lock`) (FastAPI, `/docs` y `/openapi.json` apagados en producción) con los modelos `Galaxia`, `Constelacion`, `Estrella` y `Nucleo`. Exportar esquema y ejemplo a `contrato/` con `uv run exportar-contrato`; un test falla si quedan desactualizados. *Desbloquea E2.*
+1. [x] **Contrato:** esqueleto de `api/` con **uv** (`uv init`, Python 3.13, `uv.lock`) (FastAPI, `/docs` y `/openapi.json` apagados en producción) con los modelos `Galaxy`, `Constellation`, `Star` y `Core`, organizado por capas (ver `api/README.md`). Exportar esquema y ejemplo a `contract/` con `uv run export-contract`; un test falla si quedan desactualizados. *Desbloquea E2.*
 2. [ ] **Tests de sanitización primero:** fallan si la respuesta contiene `env`, `volumes`, IPs de pods o nodos, el `repoURL` de `homelab-gitops` o mensajes de Events con rutas internas.
-3. [ ] **Informer genérico** list + watch con caché en memoria y re-list ante `410 Gone`, con su test.
+3. [ ] **Informer genérico** (`kube/`) list + watch con caché en memoria y re-list ante `410 Gone`, con su test.
 4. [ ] Un informer por recurso: Namespaces, Deployments, StatefulSets, Pods, Services, Events, `HTTPRoute`, `Application` (`argocd`).
-5. [ ] Ensamblado de la galaxia: anotaciones, commit desde el tag de imagen, sync/salud/revisión de Argo y allowlist por etiqueta.
-6. [ ] **Catálogo de infraestructura** (`api/.../catalogo.py`): componente → nombre, función y workload que lo respalda (CoreDNS, kube-proxy, API server, etcd, Calico, Traefik, Argo CD, cloudflared, Sealed Secrets…). Núcleo con sus componentes y los tres nodos (control plane, worker 1, worker 2). Test: nada fuera del catálogo aparece, y ningún componente de plataforma lleva versión ni tag.
+5. [ ] Ensamblado de la galaxia (`assembly/`, función pura: caché → `Galaxy`): anotaciones, commit desde el tag de imagen, sync/salud/revisión de Argo y allowlist por etiqueta.
+6. [ ] **Catálogo de infraestructura** (`assembly/catalog.py`): componente → nombre, función y workload que lo respalda (CoreDNS, kube-proxy, API server, etcd, Calico, Traefik, Argo CD, cloudflared, Sealed Secrets…). Núcleo con sus componentes y los tres nodos (control plane, worker 1, worker 2). Test: nada fuera del catálogo aparece, y ningún componente de plataforma lleva versión ni tag.
 7. [ ] Prueba local: `uvicorn` contra el clúster con kubeconfig por túnel SSH.
 8. [ ] Imagen: `python:3.13-slim`, UID 10001, dependencias con hash vía `uv sync --locked` (o `uv export --hashes`) en una etapa de build.
 9. [ ] CI (`.github/workflows/ci.yaml`): job por carpeta con `paths`, Trivy, push a ghcr y bump con `yq` en `homelab-gitops`. `dependabot.yml`.
 10. [ ] Manifiestos en `homelab-gitops/workloads/astrolabio/`: deployment, SA, service, `HTTPRoute` y NetworkPolicy de salida a `192.168.0.41:6443` + DNS.
 
-**Listo cuando:** `curl https://astrolabio.fabiancienfuegos.com/api/galaxia` devuelve `hola`, `cv` y el núcleo, sin campos prohibidos.
+**Listo cuando:** `curl https://astrolabio.fabiancienfuegos.com/api/galaxy` devuelve `hola`, `cv` y el núcleo, sin campos prohibidos.
 
 ## E2 · La galaxia en 3D (fase 2)
 
@@ -58,7 +58,7 @@ Puede empezar en cuanto exista el contrato (E1.1).
 6. [ ] Interacción: `OrbitControls`, `Raycaster`, vuelo de cámara y ficha en React (qué es, rol, repo, commit con enlace y estado de Argo).
 7. [ ] Accesibilidad: vista de lista con el mismo contenido y `prefers-reduced-motion` (sin pulsos ni rotación).
 8. [ ] Rendimiento: medir fps; en dispositivos lentos, bajar automáticamente las partículas y el bloom. Probar en celular real.
-9. [ ] Conectar a `/api/galaxia` real. Imagen con `nginx-unprivileged`, headers y CSP (`connect-src 'self' wss://astrolabio.fabiancienfuegos.com`), deployment ×2 sin token de SA y *default deny*.
+9. [ ] Conectar a `/api/galaxy` real. Imagen con `nginx-unprivileged`, headers y CSP (`connect-src 'self' wss://astrolabio.fabiancienfuegos.com`), deployment ×2 sin token de SA y *default deny*.
 
 **Listo cuando:** se ve fluida en el celular y `k -n hola scale deploy hola --replicas=0` (y de regreso) se refleja al recargar.
 

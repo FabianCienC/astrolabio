@@ -1,0 +1,494 @@
+{
+  "$defs": {
+    "ArgoStatus": {
+      "additionalProperties": false,
+      "description": "Sync and health of the Argo CD `Application`.\n\nNo `revision`: it is a commit of the private GitOps repo.",
+      "properties": {
+        "sync": {
+          "enum": [
+            "Synced",
+            "OutOfSync",
+            "Unknown"
+          ],
+          "title": "Sync",
+          "type": "string"
+        },
+        "health": {
+          "enum": [
+            "Healthy",
+            "Progressing",
+            "Degraded",
+            "Suspended",
+            "Missing",
+            "Unknown"
+          ],
+          "title": "Health",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sync",
+        "health"
+      ],
+      "title": "ArgoStatus",
+      "type": "object"
+    },
+    "Commit": {
+      "additionalProperties": false,
+      "description": "Deployed commit, taken from the image tag (the SHA set by CI).",
+      "properties": {
+        "sha": {
+          "pattern": "^[0-9a-f]{40}$",
+          "title": "Sha",
+          "type": "string"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sha",
+        "url"
+      ],
+      "title": "Commit",
+      "type": "object"
+    },
+    "Constellation": {
+      "additionalProperties": false,
+      "description": "A namespace labeled `fabiancienfuegos.com/astrolabio: visible`.",
+      "properties": {
+        "id": {
+          "maxLength": 253,
+          "pattern": "^[a-z0-9]([a-z0-9./-]*[a-z0-9])?$",
+          "title": "Id",
+          "type": "string"
+        },
+        "project": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Project",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "repo": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Repo"
+        },
+        "argo": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArgoStatus"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "stars": {
+          "items": {
+            "$ref": "#/$defs/Star"
+          },
+          "title": "Stars",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "project",
+        "stars"
+      ],
+      "title": "Constellation",
+      "type": "object"
+    },
+    "Core": {
+      "additionalProperties": false,
+      "description": "The galactic core: platform components and the cluster nodes.",
+      "properties": {
+        "components": {
+          "items": {
+            "$ref": "#/$defs/InfraComponent"
+          },
+          "title": "Components",
+          "type": "array"
+        },
+        "nodes": {
+          "items": {
+            "$ref": "#/$defs/Node"
+          },
+          "title": "Nodes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "components",
+        "nodes"
+      ],
+      "title": "Core",
+      "type": "object"
+    },
+    "InfraComponent": {
+      "additionalProperties": false,
+      "description": "Platform component published from the API's closed catalog.\n\nNo version, image tag, pod names, IPs or configuration.",
+      "properties": {
+        "id": {
+          "maxLength": 253,
+          "pattern": "^[a-z0-9]([a-z0-9./-]*[a-z0-9])?$",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "purpose": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Purpose",
+          "type": "string"
+        },
+        "category": {
+          "enum": [
+            "control",
+            "network",
+            "ingress",
+            "gitops",
+            "security"
+          ],
+          "title": "Category",
+          "type": "string"
+        },
+        "replicas": {
+          "$ref": "#/$defs/Replicas"
+        },
+        "health": {
+          "enum": [
+            "ok",
+            "degraded",
+            "down",
+            "unknown"
+          ],
+          "title": "Health",
+          "type": "string"
+        },
+        "argo": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ArgoStatus"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "metrics": {
+          "$ref": "#/$defs/Metrics",
+          "default": {
+            "cpu_millicores": null,
+            "memory_mib": null
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "purpose",
+        "category",
+        "replicas",
+        "health"
+      ],
+      "title": "InfraComponent",
+      "type": "object"
+    },
+    "Metrics": {
+      "additionalProperties": false,
+      "description": "CPU and memory (phase 3, metrics-server). `None` until there is data.",
+      "properties": {
+        "cpu_millicores": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cpu Millicores"
+        },
+        "memory_mib": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Memory Mib"
+        }
+      },
+      "title": "Metrics",
+      "type": "object"
+    },
+    "Node": {
+      "additionalProperties": false,
+      "description": "Cluster node, published under a generic name (no hostname or IP).",
+      "properties": {
+        "id": {
+          "enum": [
+            "control-plane",
+            "worker-1",
+            "worker-2"
+          ],
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "enum": [
+            "control plane",
+            "worker 1",
+            "worker 2"
+          ],
+          "title": "Name",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "control-plane",
+            "worker"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "health": {
+          "enum": [
+            "ok",
+            "degraded",
+            "down",
+            "unknown"
+          ],
+          "title": "Health",
+          "type": "string"
+        },
+        "pods": {
+          "minimum": 0,
+          "title": "Pods",
+          "type": "integer"
+        },
+        "metrics": {
+          "$ref": "#/$defs/Metrics",
+          "default": {
+            "cpu_millicores": null,
+            "memory_mib": null
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "role",
+        "health",
+        "pods"
+      ],
+      "title": "Node",
+      "type": "object"
+    },
+    "Replicas": {
+      "additionalProperties": false,
+      "properties": {
+        "desired": {
+          "minimum": 0,
+          "title": "Desired",
+          "type": "integer"
+        },
+        "ready": {
+          "minimum": 0,
+          "title": "Ready",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "desired",
+        "ready"
+      ],
+      "title": "Replicas",
+      "type": "object"
+    },
+    "Star": {
+      "additionalProperties": false,
+      "description": "A workload of a visible project.",
+      "properties": {
+        "id": {
+          "maxLength": 253,
+          "pattern": "^[a-z0-9]([a-z0-9./-]*[a-z0-9])?$",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 253,
+          "pattern": "^[a-z0-9]([a-z0-9./-]*[a-z0-9])?$",
+          "title": "Name",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "Deployment",
+            "StatefulSet",
+            "DaemonSet"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "role": {
+          "anyOf": [
+            {
+              "enum": [
+                "frontend",
+                "api",
+                "worker",
+                "data"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Role"
+        },
+        "criticality": {
+          "anyOf": [
+            {
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Criticality"
+        },
+        "replicas": {
+          "$ref": "#/$defs/Replicas"
+        },
+        "health": {
+          "enum": [
+            "ok",
+            "degraded",
+            "down",
+            "unknown"
+          ],
+          "title": "Health",
+          "type": "string"
+        },
+        "commit": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Commit"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "metrics": {
+          "$ref": "#/$defs/Metrics",
+          "default": {
+            "cpu_millicores": null,
+            "memory_mib": null
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "kind",
+        "replicas",
+        "health"
+      ],
+      "title": "Star",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "const": 1,
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+    },
+    "generated_at": {
+      "format": "date-time",
+      "title": "Generated At",
+      "type": "string"
+    },
+    "constellations": {
+      "items": {
+        "$ref": "#/$defs/Constellation"
+      },
+      "title": "Constellations",
+      "type": "array"
+    },
+    "core": {
+      "$ref": "#/$defs/Core"
+    }
+  },
+  "required": [
+    "generated_at",
+    "constellations",
+    "core"
+  ],
+  "title": "Galaxy",
+  "type": "object"
+}

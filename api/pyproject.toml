@@ -1,7 +1,7 @@
 [project]
 name = "astrolabio-api"
 version = "0.1.0"
-description = "API de Astrolabio: lee el clúster en vivo y expone una galaxia sanitizada"
+description = "Astrolabio API: reads the cluster live and serves a sanitized galaxy"
 readme = "README.md"
 authors = [
     { name = "Fabian Cienfuegos", email = "fabian.cienfuegos.c@gmail.com" }
@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [project.scripts]
-exportar-contrato = "astrolabio_api.contrato:main"
+export-contract = "astrolabio_api.contract.export:main"
 
 [build-system]
 requires = ["uv_build>=0.11.22,<0.12.0"]

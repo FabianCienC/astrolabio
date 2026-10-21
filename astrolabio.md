@@ -283,10 +283,10 @@ Cada fase termina con algo publicado y un criterio claro de "listo".
 ### Fase 1: watchers + API
 
 - `astrolabio-api` en Python con FastAPI y `kubernetes_asyncio`: un watcher *list + watch* por recurso, con caché en memoria y manejo de `410 Gone`.
-- Expone `GET /api/galaxia`, un JSON sanitizado con constelaciones (namespaces), estrellas (workloads), anotaciones, estado de Argo CD y commit.
+- Expone `GET /api/galaxy`, un JSON sanitizado con constelaciones (namespaces), estrellas (workloads), anotaciones, estado de Argo CD y commit.
 - Probar primero en local (`uvicorn`, con kubeconfig por túnel SSH) y luego en el clúster.
 
-**Listo cuando:** `curl https://astrolabio.fabiancienfuegos.com/api/galaxia` devuelve `hola`, `cv` y el núcleo de infraestructura, sin ningún campo prohibido.
+**Listo cuando:** `curl https://astrolabio.fabiancienfuegos.com/api/galaxy` devuelve `hola`, `cv` y el núcleo de infraestructura, sin ningún campo prohibido.
 
 ### Fase 2: la galaxia en 3D
 
