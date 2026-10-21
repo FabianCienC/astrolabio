@@ -11,6 +11,7 @@
 import type { Vector3 } from "three";
 
 import type { PlacedObject, Relation } from "./layout";
+import { NEUTRAL_GLOW } from "./symbology";
 
 /** An object as drawn this frame: `appear` 0..1 scales its size and brightness. */
 export type DrawnObject = PlacedObject & { appear: number };
@@ -23,10 +24,12 @@ const REDUCED_DURATION_MS = 600;
 /** Starts and ends gently: nothing in the scene should lurch. */
 const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
 
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
 type Line = { from: string; to: string; fade: "keep" | "in" | "out" };
 
 export class Morph {
-  private readonly start: Map<string, { position: Vector3; appear: number }>;
+  private readonly start: Map<string, { position: Vector3; appear: number; glow?: number }>;
   private readonly leaving: DrawnObject[];
   private readonly lines: Line[];
   private readonly startMs: number;
@@ -45,7 +48,7 @@ export class Morph {
     reducedMotion: boolean,
   ) {
     this.start = new Map(
-      current.map((o) => [o.id, { position: o.position.clone(), appear: o.appear }]),
+      current.map((o) => [o.id, { position: o.position.clone(), appear: o.appear, glow: o.glow }]),
     );
     const kept = new Set(next.map((o) => o.id));
     this.leaving = current.filter((o) => !kept.has(o.id) && o.appear > 0.001);
@@ -78,6 +81,8 @@ export class Morph {
         ...o,
         position: from.position.clone().lerp(o.position, e),
         appear: from.appear + (1 - from.appear) * e,
+        // CPU brightness eases too (metrics change every 15 s).
+        glow: lerp(from.glow ?? NEUTRAL_GLOW, o.glow ?? NEUTRAL_GLOW, e),
       };
     });
     for (const o of this.leaving) objects.push({ ...o, appear: o.appear * (1 - e) });

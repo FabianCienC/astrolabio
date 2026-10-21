@@ -15,7 +15,7 @@ import {
 } from "three";
 
 import type { PlacedObject } from "./layout";
-import { KIND_COLORS } from "./symbology";
+import { CPU_GLOW, KIND_COLORS, NEUTRAL_GLOW } from "./symbology";
 
 /** Must match the 420.0 and 5.0 in the vertex shader: picking uses the same size. */
 export const SIZE_SCALE = 420;
@@ -34,6 +34,11 @@ const FOCUS_SPEED = 2.5;
 const vertexShader = /* glsl */ `
   uniform float uPixelRatio;
   uniform float uSize;
+  // Largest gl_PointSize the GPU draws (64 on some phones): halos shrink to fit it.
+  uniform float uMaxPointSize;
+  // Seconds, and 1 unless reduced motion: busy stars breathe.
+  uniform float uTime;
+  uniform float uMotion;
   // Index and 0..1 amount for the current and the fading-out previous highlight.
   uniform vec4 uSelected;  // (index, amount, previous index, previous amount)
   uniform vec4 uHovered;
@@ -44,10 +49,16 @@ const vertexShader = /* glsl */ `
   attribute float aIndex;
   // 0..1 while an object grows in or shrinks away during a live update (see morph.ts).
   attribute float aAppear;
+  // 0..1 from CPU (see CPU_GLOW): an idle object is a small dim point, a busy one a
+  // white-hot core with a wide halo.
+  attribute float aGlow;
   attribute vec3 aColor;
-  varying vec3 vColor;
+  varying vec3 vCore;
+  varying vec3 vHalo;
   varying float vShape;
   varying float vPixels;
+  // Share of the sprite the core takes; the rest is halo.
+  varying float vCoreFraction;
 
   float amount(vec4 h) {
     return (1.0 - step(0.5, abs(aIndex - h.x))) * h.y + (1.0 - step(0.5, abs(aIndex - h.z))) * h.w;
@@ -59,23 +70,37 @@ const vertexShader = /* glsl */ `
 
     float selected = amount(uSelected);
     float hovered = amount(uHovered) * (1.0 - selected);
+    float g = aGlow;
+    // Only clearly busy stars breathe, each at its own phase.
+    float breath = 1.0 + uMotion * 0.2 * smoothstep(0.55, 1.0, g) * sin(uTime * (1.4 + g) + aIndex * 1.7);
 
-    // Everything rests a little dim; with a selection the rest dims further (hover lifts it
-    // back) and the selected object outshines it all, tinted toward white.
-    float rest = ${BASE_BRIGHTNESS.toFixed(2)} * mix(1.0, ${DIMMED.toFixed(2)}, uFocus);
-    float brightness = mix(mix(rest, ${BASE_BRIGHTNESS.toFixed(2)}, hovered), ${SELECTED_BRIGHTNESS.toFixed(2)}, selected);
-    vColor = mix(aColor, vec3(1.0), 0.12 * selected) * brightness * aAppear;
+    // Everything else dims while something is selected (hover lifts it back); the selected
+    // object outshines it all, tinted toward white.
+    float focus = mix(mix(1.0, ${DIMMED.toFixed(2)}, uFocus), 1.0, max(hovered, selected));
+    float core = mix(${CPU_GLOW.coreDim.toFixed(2)}, ${CPU_GLOW.coreBright.toFixed(2)}, g) * breath;
+    float brightness = mix(${BASE_BRIGHTNESS.toFixed(2)} * core * focus, ${SELECTED_BRIGHTNESS.toFixed(2)} * max(core, 1.0), selected);
+    vCore = mix(aColor, vec3(1.0), 0.2 + 0.5 * g + 0.15 * selected) * brightness * aAppear;
+    float halo = mix(${CPU_GLOW.haloDim.toFixed(2)}, ${CPU_GLOW.haloBright.toFixed(2)}, g * g);
+    vHalo = aColor * halo * breath * focus * aAppear;
     vShape = aShape;
+
+    // The core keeps the size picking uses; the halo extends the sprite around it.
     float size = uSize * aSize * (1.0 + ${SELECTED_GROWTH.toFixed(2)} * selected + ${HOVERED_GROWTH.toFixed(2)} * hovered);
-    gl_PointSize = max(size * uPixelRatio * (420.0 / -mvPosition.z), 5.0 * uPixelRatio) * aAppear;
+    float corePx = max(size * uPixelRatio * (420.0 / -mvPosition.z), 5.0 * uPixelRatio);
+    float haloScale = mix(${CPU_GLOW.haloMin.toFixed(2)}, ${CPU_GLOW.haloMax.toFixed(2)}, g * g);
+    float spritePx = min(corePx * (1.0 + haloScale), max(uMaxPointSize, corePx));
+    gl_PointSize = spritePx * aAppear;
+    vCoreFraction = corePx / spritePx;
     vPixels = gl_PointSize;
   }
 `;
 
 const fragmentShader = /* glsl */ `
-  varying vec3 vColor;
+  varying vec3 vCore;
+  varying vec3 vHalo;
   varying float vShape;
   varying float vPixels;
+  varying float vCoreFraction;
 
   // Signed distance (negative inside) of an equilateral triangle, in sprite space.
   float sdTriangle(vec2 p, float r) {
@@ -90,22 +115,31 @@ const fragmentShader = /* glsl */ `
   void main() {
     vec2 p = gl_PointCoord - 0.5;
     p.y = -p.y;
+
+    // Core: the kind's shape, in its own space at the sprite's center.
+    vec2 q = p / vCoreFraction;
     int shape = int(vShape + 0.5);
     float d;
     if (shape == 0) {
-      d = length(p) - 0.42;                         // disc
+      d = length(q) - 0.42;                         // disc
     } else if (shape == 1) {
-      d = abs(length(p) - 0.36) - 0.06;             // ring
+      d = abs(length(q) - 0.36) - 0.06;             // ring
     } else if (shape == 2) {
-      d = (abs(p.x) + abs(p.y)) - 0.42;             // diamond
+      d = (abs(q.x) + abs(q.y)) - 0.42;             // diamond
     } else {
-      d = sdTriangle(p - vec2(0.0, -0.06), 0.4);    // triangle, pointing up
+      d = sdTriangle(q - vec2(0.0, -0.06), 0.4);    // triangle, pointing up
     }
-    // Antialias over about one screen pixel, whatever the sprite size.
-    float edge = 1.0 / max(vPixels, 1.0);
-    float alpha = 1.0 - smoothstep(-edge, edge, d);
-    if (alpha <= 0.0) discard;
-    gl_FragColor = vec4(vColor * alpha, 1.0);
+    // Antialias over about one screen pixel, whatever the core size.
+    float edge = 1.0 / max(vPixels * vCoreFraction, 1.0);
+    float core = 1.0 - smoothstep(-edge, edge, d);
+
+    // Halo: soft and wide, fading to nothing at the sprite's edge (0 center, 1 edge).
+    float r = length(p) * 2.0;
+    float halo = pow(max(1.0 - r, 0.0), 2.0) + 0.8 * exp(-r * r * 40.0);
+
+    vec3 color = vCore * core + vHalo * halo;
+    if (max(color.r, max(color.g, color.b)) < 0.002) discard;
+    gl_FragColor = vec4(color, 1.0);
   }
 `;
 
@@ -155,7 +189,8 @@ export class ObjectPoints {
   private readonly hovered = new Highlight(6);
   private focusAmount = 0;
 
-  constructor(pixelRatio: number) {
+  /** `maxPointSize`: the GPU's largest point sprite; `reducedMotion` stops the breathing. */
+  constructor(pixelRatio: number, maxPointSize: number, reducedMotion: boolean) {
     this.material = new ShaderMaterial({
       vertexShader,
       fragmentShader,
@@ -165,6 +200,9 @@ export class ObjectPoints {
         uSelected: { value: [-1, 0, -1, 0] },
         uHovered: { value: [-1, 0, -1, 0] },
         uFocus: { value: 0 },
+        uMaxPointSize: { value: maxPointSize },
+        uTime: { value: 0 },
+        uMotion: { value: reducedMotion ? 0 : 1 },
       },
       blending: AdditiveBlending,
       depthWrite: false,
@@ -186,6 +224,7 @@ export class ObjectPoints {
     this.geometry.setAttribute("aShape", attribute(objects.map((o) => o.shape)));
     this.geometry.setAttribute("aIndex", attribute(objects.map((_, i) => i)));
     this.geometry.setAttribute("aAppear", attribute(objects.map((o) => o.appear ?? 1)));
+    this.geometry.setAttribute("aGlow", attribute(objects.map((o) => o.glow ?? NEUTRAL_GLOW)));
   }
 
   /** Index into the last `update` list, or -1 for none. */
@@ -213,6 +252,7 @@ export class ObjectPoints {
 
   /** Advances highlight fades; call once per frame. */
   animate(deltaSeconds: number) {
+    this.material.uniforms.uTime!.value += deltaSeconds;
     const towards = this.selected.index >= 0 ? 1 : 0;
     const step = deltaSeconds * FOCUS_SPEED;
     this.focusAmount =

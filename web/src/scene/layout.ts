@@ -29,6 +29,8 @@ export type PlacedObject = {
   position: Vector3;
   size: number;
   shape: number;
+  /** 0..1 brightness from CPU (`cpuGlow`); undefined without metrics. Set by the scene. */
+  glow?: number;
 };
 
 export type Relation = [fromId: string, toId: string];

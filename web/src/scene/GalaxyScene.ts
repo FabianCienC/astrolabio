@@ -14,6 +14,7 @@ import type { Galaxy } from "../contract/galaxy";
 import { CameraRig } from "./cameraRig";
 import { SceneLabels } from "./labels";
 import { SelectionHalo } from "./halo";
+import { glowById } from "./glow";
 import { layoutGalaxy, type PlacedObject, type Relation } from "./layout";
 import { type DrawnObject, Morph } from "./morph";
 import { Nebulae } from "./nebulae";
@@ -108,7 +109,10 @@ export class GalaxyScene {
     this.camera = new PerspectiveCamera(55, 1, 0.1, 2000);
     this.rig = new CameraRig(this.camera, canvas, options.reducedMotion);
 
-    this.objects = new ObjectPoints(pixelRatio);
+    // Halos grow past the core; some phones cap a point sprite at 64 px, so they shrink to fit.
+    const gl = this.renderer.getContext();
+    const maxPointSize = (gl.getParameter(gl.ALIASED_POINT_SIZE_RANGE) as Float32Array)[1] ?? 64;
+    this.objects = new ObjectPoints(pixelRatio, maxPointSize, options.reducedMotion);
     this.halo = new SelectionHalo(pixelRatio, options.reducedMotion);
     this.labels = new SceneLabels(this.scene, canvas.parentElement!, options.reducedMotion);
     this.nebulae = new Nebulae(options.reducedMotion);
@@ -148,6 +152,8 @@ export class GalaxyScene {
    */
   load(galaxy: Galaxy) {
     const layout = layoutGalaxy(galaxy);
+    const glow = glowById(galaxy);
+    for (const o of layout.objects) o.glow = glow.get(o.id);
     // During a morph these positions move every frame; the layout's own stay the targets.
     this.placed = layout.objects.map((o) => ({ ...o, position: o.position.clone() }));
     this.indexById = new Map(this.placed.map((o, i) => [o.id, i]));

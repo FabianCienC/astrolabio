@@ -16,16 +16,19 @@ import {
 import type { DrawnObject, DrawnRelation } from "./morph";
 import { RELATION } from "./symbology";
 
+const COLORS = new Map(RELATION.kinds.map((k) => [k.from, new Color(k.color)]));
+const FALLBACK = new Color("#9b87ff");
+
 export class RelationLines {
   /** Opacity with nothing selected (the debug panel tunes this). */
   baseOpacity = RELATION.opacity;
   readonly material = new LineBasicMaterial({
-    color: new Color(RELATION.color),
+    color: new Color("#ffffff"), // each line carries its own color
     opacity: RELATION.opacity,
     transparent: true,
     blending: AdditiveBlending,
     depthWrite: false,
-    // Per-vertex gray scales each line: with additive blending, darker means fainter.
+    // Per-vertex color: the relation's color, scaled by its fade (additive: darker is fainter).
     vertexColors: true,
   });
   readonly object = new LineSegments(new BufferGeometry(), this.material);
@@ -52,7 +55,8 @@ export class RelationLines {
         b.position.y,
         b.position.z,
       );
-      shades.push(shade, shade, shade, shade, shade, shade);
+      const color = (COLORS.get(a.kind) ?? FALLBACK).clone().multiplyScalar(shade).toArray();
+      shades.push(...color, ...color);
     }
     this.object.geometry.dispose();
     this.object.geometry = new BufferGeometry();

@@ -1,6 +1,6 @@
 import { type CSSProperties, type SyntheticEvent, useState } from "react";
 
-import { NEBULA, OBJECT_KINDS, RELATION } from "../scene/symbology";
+import { CPU_GLOW, KIND, NEBULA, OBJECT_KINDS, RELATION } from "../scene/symbology";
 import { KindSymbol } from "./KindSymbol";
 
 const STORAGE_KEY = "astrolabio.legend-open";
@@ -48,20 +48,35 @@ export function Legend() {
 
       <h2>Relaciones y áreas</h2>
       <ul>
-        <li>
-          <span className="symbol-slot" aria-hidden="true">
-            <span
-              className="legend-line"
-              style={{ "--line": RELATION.color, opacity: RELATION.opacity * 2.5 } as CSSProperties}
-            />
-          </span>
-          {RELATION.label}
-        </li>
+        {RELATION.kinds.map((k) => (
+          <li key={k.from}>
+            <span className="symbol-slot" aria-hidden="true">
+              <span className="legend-line" style={{ "--line": k.color } as CSSProperties} />
+            </span>
+            {k.label}
+          </li>
+        ))}
         <li>
           <span className="symbol-slot" aria-hidden="true">
             <span className="legend-nebula" style={{ "--nebula": NEBULA.palette[1] } as CSSProperties} />
           </span>
           {NEBULA.label}
+        </li>
+      </ul>
+
+      <h2>Actividad</h2>
+      <ul>
+        <li>
+          {/* An idle pod and a busy one, as the scene draws them. */}
+          <span
+            className="legend-glow"
+            aria-hidden="true"
+            style={{ "--star": KIND.pod.color } as CSSProperties}
+          >
+            <span className="legend-star legend-star-idle" />
+            <span className="legend-star legend-star-busy" />
+          </span>
+          {CPU_GLOW.label}
         </li>
       </ul>
     </details>

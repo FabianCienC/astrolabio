@@ -8,7 +8,8 @@
 
 import { Color } from "three";
 
-export const BACKGROUND = new Color("#000000");
+/** Deep navy, like the night sky in the references; the stage adds a vignette in CSS. */
+export const BACKGROUND = new Color("#060a14");
 
 /** Shapes the object shader can draw. The index is what the shader receives. */
 export const SHAPE = { disc: 0, ring: 1, diamond: 2, triangle: 3 } as const;
@@ -53,9 +54,13 @@ export const KIND_COLORS = Object.fromEntries(
 
 /** Lines exist only for real relations (never just to group things). */
 export const RELATION = {
-  label: "Relación real (Service → Pod, ruta → Service)",
-  color: "#9fb4ff",
-  opacity: 0.28,
+  /** Thin additive lines: where many cross, they add up to a glow. */
+  opacity: 0.4,
+  /** One color per relation, keyed by the kind it starts from. */
+  kinds: [
+    { from: "service", label: "Service → los pods que selecciona", color: "#3fd8c6" },
+    { from: "route", label: "Ruta → los Services a los que envía tráfico", color: "#9b87ff" },
+  ] as { from: ObjectKind; label: string; color: string }[],
 };
 
 /** Nebula behind each project: cool, muted hues that stay in the background. */
@@ -72,3 +77,42 @@ export function nebulaColor(isCore: boolean, hash: number): Color {
   const palette = isCore ? NEBULA.systems : NEBULA.palette;
   return new Color(palette[hash % palette.length]!);
 }
+
+/**
+ * CPU (metrics-server) makes each object a brighter, bigger star: an idle one is a
+ * small dim point, a busy one a white-hot core with a wide halo in its kind color.
+ * On a log scale, so 2m and 200m read far apart, up to a reference per kind (a
+ * node naturally uses far more than a pod). Objects without metrics sit at
+ * NEUTRAL_GLOW, a modest star.
+ */
+export const CPU_GLOW = {
+  label: "Halo: uso de CPU (más CPU, estrella más grande y brillante)",
+  /** Millicores that count as full glow, per kind. */
+  reference: { pod: 100, workload: 200, component: 200, node: 1000 } as Partial<
+    Record<ObjectKind, number>
+  >,
+  /** Halo radius, as a multiple of the core radius, at zero and full glow. */
+  haloMin: 0.5,
+  haloMax: 11,
+  /** Halo intensity at zero and full glow. */
+  haloDim: 0.04,
+  haloBright: 1.5,
+  /** Core brightness at zero and full glow (the core also turns whiter). */
+  coreDim: 0.35,
+  coreBright: 1.9,
+};
+
+/** 0..1 glow of an object from its CPU, or undefined when it has no metrics. */
+export function cpuGlow(
+  kind: ObjectKind,
+  cpuMillicores: number | null | undefined,
+): number | undefined {
+  const reference = CPU_GLOW.reference[kind];
+  if (reference === undefined || cpuMillicores === null || cpuMillicores === undefined) {
+    return undefined;
+  }
+  return Math.min(Math.log10(1 + cpuMillicores) / Math.log10(1 + reference), 1);
+}
+
+/** Glow of objects without metrics (Services, routes, or no metrics-server): a modest star. */
+export const NEUTRAL_GLOW = 0.35;

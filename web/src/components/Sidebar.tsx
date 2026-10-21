@@ -2,7 +2,7 @@ import type { GalaxyIndex } from "../model/galaxyIndex";
 import { HEALTH_LABEL } from "../model/health";
 import { componentId, namespaceId, nodeId } from "../model/ids";
 import { KindSymbol } from "./KindSymbol";
-import { ObjectDetails } from "./ObjectDetails";
+import { CpuMeter, ObjectDetails } from "./ObjectDetails";
 
 type Props = {
   index: GalaxyIndex;
@@ -54,6 +54,26 @@ function Overview({ index, onSelect }: { index: GalaxyIndex; onSelect: (id: stri
   const bySystem = new Map<string, typeof core.components>();
   for (const c of core.components) bySystem.set(c.system, [...(bySystem.get(c.system) ?? []), c]);
   const systems = [...bySystem];
+  // The busiest workloads and platform components: what shines brightest in the scene.
+  const busiest = [
+    ...constellations.flatMap((c) =>
+      c.workloads.map((w) => ({
+        id: w.id,
+        kind: "workload" as const,
+        name: w.name,
+        cpu: w.metrics.cpu_millicores,
+      })),
+    ),
+    ...core.components.map((c) => ({
+      id: componentId(c.id),
+      kind: "component" as const,
+      name: c.name,
+      cpu: c.metrics.cpu_millicores,
+    })),
+  ]
+    .filter((o): o is typeof o & { cpu: number } => o.cpu !== null)
+    .sort((a, b) => b.cpu - a.cpu)
+    .slice(0, 5);
 
   return (
     <div className="overview">
@@ -65,6 +85,23 @@ function Overview({ index, onSelect }: { index: GalaxyIndex; onSelect: (id: stri
         <div><dt>Nodos</dt><dd>{core.nodes.length}</dd></div>
         <div><dt>Pods</dt><dd>{projectPods.length + platformPods.length}</dd></div>
       </dl>
+
+      {busiest.length > 0 && (
+        <>
+          <h3>Más activos</h3>
+          <ul className="picker">
+            {busiest.map((o) => (
+              <li key={o.id}>
+                <button type="button" onClick={() => onSelect(o.id)}>
+                  <KindSymbol kind={o.kind} />
+                  <span>{o.name}</span>
+                  <CpuMeter kind={o.kind} cpu={o.cpu} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
 
       <h3>Proyectos</h3>
       <ul className="picker">
@@ -103,6 +140,9 @@ function Overview({ index, onSelect }: { index: GalaxyIndex; onSelect: (id: stri
             <button type="button" onClick={() => onSelect(nodeId(n.id))}>
               <KindSymbol kind="node" size={1.2} />
               <span>{n.name}</span>
+              {n.metrics.cpu_millicores !== null && (
+                <CpuMeter kind="node" cpu={n.metrics.cpu_millicores} />
+              )}
               <span className={`badge badge-${n.health}`}>{HEALTH_LABEL[n.health]}</span>
             </button>
           </li>

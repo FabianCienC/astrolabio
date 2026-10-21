@@ -4,7 +4,7 @@ import type { ArgoStatus, Commit, Metrics, Pod, Replicas } from "../contract/gal
 import type { Entry, GalaxyIndex } from "../model/galaxyIndex";
 import { type Health, HEALTH_LABEL } from "../model/health";
 import { componentId, namespaceId } from "../model/ids";
-import { KIND } from "../scene/symbology";
+import { cpuGlow, KIND, type ObjectKind } from "../scene/symbology";
 import { KindSymbol } from "./KindSymbol";
 
 type Props = { entry: Entry; index: GalaxyIndex; onSelect: (id: string) => void };
@@ -78,7 +78,7 @@ function fields(entry: Entry, index: GalaxyIndex, link: (id: string) => ReactNod
           {w.criticality && <Row label="Criticidad">{w.criticality}</Row>}
           <Row label="Réplicas"><ReplicaCount replicas={w.replicas} /></Row>
           {w.commit && <Row label="Commit"><CommitLink commit={w.commit} /></Row>}
-          <MetricsRows metrics={w.metrics} />
+          <MetricsRows metrics={w.metrics} kind="workload" />
           {w.replica_sets.length > 0 && (
             <Row label="ReplicaSets"><List ids={w.replica_sets.map((r) => r.id)} link={link} /></Row>
           )}
@@ -145,7 +145,7 @@ function fields(entry: Entry, index: GalaxyIndex, link: (id: string) => ReactNod
           <Row label="Categoría">{CATEGORY_LABEL[c.category]}</Row>
           <Row label="Réplicas"><ReplicaCount replicas={c.replicas} /></Row>
           {c.argo && <Row label="Argo CD"><Argo argo={c.argo} /></Row>}
-          <MetricsRows metrics={c.metrics} />
+          <MetricsRows metrics={c.metrics} kind="component" />
           {c.pods.length > 0 && <Row label="Pods"><List ids={c.pods.map((p) => p.id)} link={link} /></Row>}
           <p className="note">Los objetos de la plataforma se muestran sin nombres ni versiones.</p>
         </>
@@ -158,7 +158,7 @@ function fields(entry: Entry, index: GalaxyIndex, link: (id: string) => ReactNod
           <Row label="Estado"><HealthBadge health={n.health} /></Row>
           <Row label="Rol">{n.role === "control-plane" ? "Plano de control" : "Worker"}</Row>
           <Row label="Pods">{n.pods}</Row>
-          <MetricsRows metrics={n.metrics} />
+          <MetricsRows metrics={n.metrics} kind="node" />
         </>
       );
     }
@@ -193,15 +193,19 @@ function PodRows({ pod }: { pod: Pod }) {
       <Row label="Listo">{pod.ready ? "Sí" : "No"}</Row>
       <Row label="Reinicios">{pod.restarts}</Row>
       {pod.node && <Row label="Nodo">{NODE_LABEL[pod.node]}</Row>}
-      <MetricsRows metrics={pod.metrics} />
+      <MetricsRows metrics={pod.metrics} kind="pod" />
     </>
   );
 }
 
-function MetricsRows({ metrics }: { metrics: Metrics }) {
+function MetricsRows({ metrics, kind }: { metrics: Metrics; kind: ObjectKind }) {
   return (
     <>
-      {metrics.cpu_millicores !== null && <Row label="CPU">{metrics.cpu_millicores} m</Row>}
+      {metrics.cpu_millicores !== null && (
+        <Row label="CPU">
+          <CpuMeter kind={kind} cpu={metrics.cpu_millicores} />
+        </Row>
+      )}
       {metrics.memory_mib !== null && <Row label="Memoria">{metrics.memory_mib} MiB</Row>}
     </>
   );
@@ -243,4 +247,24 @@ function External({ href, children }: { href: string; children: ReactNode }) {
 
 function repoName(url: string) {
   return url.replace("https://github.com/", "");
+}
+
+/** CPU as a bar on the scene's own scale: a full bar is a star at full glow. */
+export function CpuMeter({ kind, cpu }: { kind: ObjectKind; cpu: number }) {
+  const glow = cpuGlow(kind, cpu) ?? 0;
+  return (
+    <span className="cpu-meter">
+      <span
+        className="cpu-meter-bar"
+        role="meter"
+        aria-label="Uso de CPU"
+        aria-valuemin={0}
+        aria-valuemax={1}
+        aria-valuenow={glow}
+      >
+        <span style={{ width: `${Math.round(glow * 100)}%` }} />
+      </span>
+      {cpu} m
+    </span>
+  );
 }

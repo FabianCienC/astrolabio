@@ -58,11 +58,12 @@ React: App ─┬► components/SceneCanvas ─► scene/GalaxyScene ─► layo
 | `src/scene/halo.ts` | Ring halo around the selected object: grows in, follows the selection, breathes slowly, fades out. |
 | `src/scene/labels.ts` | Floating names of projects and platform systems (CSS2DRenderer over the canvas). Keyed by id: they drift and fade in or out on live updates. |
 | `src/scene/layout.ts` | Pure: galaxy → positioned objects + relations. Position encodes ownership (pods around their replica set, by their workload, around the namespace ring). Deterministic. |
-| `src/scene/objects.ts` | Every k8s object as one `Points`: flat shapes by kind, color by kind; selected brightens, hovered grows, the rest dims while something is selected. |
+| `src/scene/objects.ts` | Every k8s object as one `Points`: a star per object (core in its kind's shape + halo in its color), CPU growing the halo and whitening the core; selected brightens, hovered grows, the rest dims while something is selected. Halos are capped to the GPU's max point size. |
 | `src/scene/relations.ts` | Lines for real relations only: Service → pods it selects, route → services. Each line fades with its morph weight and its ends. |
 | `src/scene/morph.ts` | Live updates without jumps: objects glide to their new place, new ones grow in, gone ones shrink away, lines fade (1.4 s, 0.6 s with reduced motion, eased both ends). Every morph starts from what is on screen, so updates arriving mid-transition never jump. |
 | `src/scene/nebulae.ts` | Soft fbm nebula behind each group, camera-facing, from the cool nebula palette. Keyed by group: they drift to their new center and size and fade in or out on live updates. |
 | `src/scene/symbology.ts` | What every visual means: object kinds (shape, size, color, label), relation line and nebula styles, background. **Add new symbols here.** |
+| `src/scene/glow.ts` | CPU of every object with metrics (pods, workloads, components, nodes) as the 0..1 glow the shader draws (`cpuGlow` and `CPU_GLOW` in `symbology.ts`, shown in the legend). |
 | `src/scene/quality.ts` | Quality levels (high, low, minimal: pixel ratio and bloom strength; bloom never turns off). Picked on load, then `QualityGovernor` steps down while fps stays under the level's minimum (never back up). `?quality=` forces a level. |
 | `src/scene/random.ts` | Seeded PRNG and string hash for deterministic layout. |
 | `src/scene/debug.ts` | Dev-only tuning panel (lil-gui); never shipped in the build. |
