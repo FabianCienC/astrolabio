@@ -81,14 +81,18 @@ def argo_status(application: RawObject | None) -> ArgoStatus | None:
     )
 
 
+def pod_ready(raw: RawObject) -> bool:
+    return any(
+        c.get("type") == "Ready" and c.get("status") == "True"
+        for c in status(raw).get("conditions") or []
+    )
+
+
 def build_pod(raw: RawObject, id: str, pod_name: str | None, node_ids: dict[str, NodeId]) -> Pod:
     pod_status = status(raw)
     phase = pod_status.get("phase")
     phase = phase if phase in _POD_PHASES else "Unknown"
-    ready = any(
-        c.get("type") == "Ready" and c.get("status") == "True"
-        for c in pod_status.get("conditions") or []
-    )
+    ready = pod_ready(raw)
     return Pod(
         id=id,
         name=pod_name,

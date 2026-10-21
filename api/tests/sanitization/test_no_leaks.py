@@ -9,7 +9,6 @@ cluster.
 import re
 from collections.abc import Iterator
 
-import pytest
 from fastapi.testclient import TestClient
 from poisoned_cluster import SECRETS, SHA, poisoned_cluster
 
@@ -85,16 +84,19 @@ def test_assembled_galaxy_has_no_leaks():
     assert [p.name for p in cv.workloads[0].all_pods()] == ["cv-7d9f8b6c5-abcde"]
 
 
-@pytest.mark.xfail(
-    raises=ModuleNotFoundError,
-    strict=True,
-    reason="the infra catalog does not exist yet (PLAN E1.6); drop this mark then",
-)
 def test_core_publishes_only_catalog_components():
-    import astrolabio_api.assembly.catalog  # noqa: F401
-
-    galaxy = assemble_galaxy(poisoned_cluster())
-    assert {c.id for c in galaxy.core.components} == {"coredns", "kube-apiserver", "calico-node"}
+    core = assemble_galaxy(poisoned_cluster()).core
+    components = {c.id: c for c in core.components}
+    assert set(components) == {"coredns", "kube-apiserver", "calico-node"}  # no debug-shell
+    # kube-dns is drawn, but without its name.
+    assert [(s.id, s.name) for s in components["coredns"].services] == [
+        ("core/coredns/service-1", None)
+    ]
+    assert [(n.id, n.pods) for n in core.nodes] == [
+        ("control-plane", 2),
+        ("worker-1", 1),
+        ("worker-2", 1),
+    ]
 
 
 def test_poisoned_cluster_has_every_watched_resource():

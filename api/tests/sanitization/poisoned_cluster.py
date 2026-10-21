@@ -90,13 +90,21 @@ def _pod_spec(*containers: dict, node: str) -> dict:
     }
 
 
-def _pod(name: str, namespace: str, owner: tuple[str, str], spec: dict, ip: str, host_ip: str):
+def _pod(
+    name: str,
+    namespace: str,
+    owner: tuple[str, str],
+    spec: dict,
+    ip: str,
+    host_ip: str,
+    labels: dict[str, str],
+):
     kind, owner_name = owner
     return {
         "metadata": _meta(
             name,
             namespace,
-            labels={"app": owner_name},
+            labels=labels,
             ownerReferences=[{"kind": kind, "name": owner_name, "controller": True}],
         ),
         "spec": spec,
@@ -243,6 +251,7 @@ def poisoned_cluster() -> dict[str, list[dict]]:
                 cv_pod_spec,
                 "10.244.1.23",
                 "192.168.0.42",
+                {"app": "cv"},
             ),
             _pod(
                 "coredns-668d6bf9bc-x7k2p",
@@ -251,6 +260,7 @@ def poisoned_cluster() -> dict[str, list[dict]]:
                 coredns_spec,
                 "10.244.2.7",
                 "192.168.0.41",
+                {"k8s-app": "kube-dns"},
             ),
             _pod(
                 "calico-node-4hq9z",
@@ -259,6 +269,7 @@ def poisoned_cluster() -> dict[str, list[dict]]:
                 calico_spec,
                 "192.168.0.43",
                 "192.168.0.43",
+                {"k8s-app": "calico-node"},
             ),
             # Static pod: owned by the node, named after its hostname.
             _pod(
@@ -268,6 +279,7 @@ def poisoned_cluster() -> dict[str, list[dict]]:
                 apiserver_spec,
                 "192.168.0.41",
                 "192.168.0.41",
+                {"component": "kube-apiserver", "tier": "control-plane"},
             ),
         ],
         "services": [
@@ -283,7 +295,7 @@ def poisoned_cluster() -> dict[str, list[dict]]:
             {
                 "metadata": _meta("kube-dns", "kube-system"),
                 "spec": {
-                    "selector": {"app": "coredns"},
+                    "selector": {"k8s-app": "kube-dns"},
                     "clusterIP": "10.96.0.10",
                     "ports": [{"port": 53, "protocol": "UDP"}],
                 },

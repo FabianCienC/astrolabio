@@ -1,6 +1,8 @@
 """Assembly layer: turns the informers' raw objects into a public `Galaxy`.
 
 - `galaxy.py`: `assemble_galaxy(snapshot)`, the only entry point. Pure: cache in, `Galaxy` out.
+- `core.py`: the core: catalog components (anonymous pods and services) and the node suns.
+- `catalog.py`: the closed catalog of platform components and their backing workloads.
 - `projects.py`: visible namespaces as constellations (workloads, replica sets, pods,
   services, routes, Argo CD status).
 - `nodes.py`: hostnames to generic node ids (`control-plane`, `worker-1`, `worker-2`).
