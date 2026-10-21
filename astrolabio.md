@@ -31,8 +31,8 @@ Es el requisito central del proyecto. Si se ve como un diagrama de cajas con efe
 | Fondo | Cielo profundo con miles de estrellas lejanas y un leve paralaje al mover la cámara | `Points` con un `BufferGeometry` de partículas, en capas a distintas profundidades |
 | Estrellas (workloads) | Puntos de luz que **brillan y respiran**, no esferas sólidas. El halo crece con la CPU o el tráfico | Sprites o `Points` con shader propio + `UnrealBloomPass` (post-procesado) |
 | Constelaciones (namespaces) | Grupos de estrellas unidos por **líneas finas y luminosas**, como en una carta astronómica, con una **nebulosa** de color detrás de cada proyecto | `Line` / `LineSegments` con material aditivo; nebulosa con planos de ruido (shader con *fbm*) y transparencia |
-| Núcleo de infraestructura | Un centro galáctico brillante y difuso (Traefik, Argo CD, Calico…) del que nacen los brazos donde viven los proyectos | Disco de partículas con rotación lenta y gradiente de color |
-| Nodos del clúster (opcional) | Tres "soles" con sus workloads orbitando | Órbitas con `EllipseCurve` y animación en el *render loop* |
+| Núcleo de infraestructura | Un centro galáctico brillante y difuso del que nacen los brazos donde viven los proyectos. Dentro, cada componente de plataforma (Traefik, Argo CD, Calico…) es una estrella con su propia ficha | Disco de partículas con rotación lenta y gradiente de color; componentes como `Points` con el mismo shader de las estrellas |
+| Nodos del clúster | Tres "soles" en el corazón del núcleo (control plane y dos workers), con brillo según su CPU. Los workloads **no** orbitan alrededor de ellos: las constelaciones siguen agrupadas por proyecto | Sprites grandes con bloom; la ficha muestra salud, pods y CPU/RAM |
 | Tráfico | Pulsos de luz que viajan por las líneas cuando hay peticiones | Partículas animadas a lo largo de curvas (`CatmullRomCurve3`) |
 | Salud | Verde-azulado estable (ok), ámbar parpadeante (degradado), rojo apagándose (caído) | Uniforms del shader animados |
 | Interacción | Cámara orbital suave; al hacer clic, vuelo hacia la estrella y se abre la ficha | `OrbitControls` + interpolación de cámara + `Raycaster` |
@@ -255,7 +255,11 @@ k auth can-i delete pods --as=system:serviceaccount:astrolabio:astrolabio-api   
 ## Seguridad (importante por ser público)
 
 - **Modelo sanitizado.** La API nunca reenvía objetos de Kubernetes tal cual: los convierte a modelos de Pydantic con una lista de campos permitidos (nombre, namespace, réplicas, estado, anotaciones `fabiancienfuegos.com/*`, tag de imagen). Nunca expone `env`, `volumes`, IPs de pods o nodos, `repoURL` del repo privado `homelab-gitops`, ni mensajes de Events que contengan rutas internas.
-- **Namespaces visibles por allowlist.** Solo los que tienen `fabiancienfuegos.com/astrolabio: visible` se dibujan con detalle. La plataforma (`kube-system`, `argocd`, `traefik`, `cloudflared`, `calico-system`) aparece como el núcleo galáctico, "infraestructura", sin nombres de pods.
+- **Namespaces visibles por allowlist.** Solo los que tienen `fabiancienfuegos.com/astrolabio: visible` se dibujan con detalle.
+- **Infraestructura como vitrina, con catálogo cerrado.** La plataforma (`kube-system`, `argocd`, `traefik`, `cloudflared`, `calico-system`) forma el núcleo galáctico y sí muestra sus componentes, para presentar la infraestructura que se mantiene. Solo aparecen los componentes listados en un **catálogo dentro de la API** (nombre, función, workload que lo respalda); lo que no está en el catálogo no se publica. Las descripciones viven en el catálogo, no en anotaciones, porque varios componentes son pods estáticos de kubeadm o los crea un operador y no se pueden anotar por GitOps.
+  - **Se muestra:** nombre, función, salud, réplicas listas/deseadas, sync y salud de Argo CD (si aplica) y, desde la fase 3, CPU/RAM.
+  - **No se muestra:** nombres de pods, IPs, puertos, **versiones o tags de imagen** (darían a cualquiera la lista exacta de CVE a probar), argumentos, configuración ni `repoURL`.
+  - **Nodos:** se publican como "control plane", "worker 1" y "worker 2", sin hostname ni IP.
 - **Solo lectura de punta a punta.** RBAC sin verbos de escritura, y API sin endpoints `POST`, `PUT` ni `DELETE`. La documentación automática de FastAPI (`/docs`, `/openapi.json`) queda **desactivada** en producción.
 - **Cloudflare como escudo:** una regla de *rate limiting* en `/api` y `/ws` (el plan gratuito incluye una), WAF administrado activado y el tráfico solo por el túnel.
 - **Headers de seguridad** en el `HTTPRoute`, como en `cv`. La CSP debe permitir `connect-src 'self' wss://astrolabio.fabiancienfuegos.com` para el WebSocket. Si los shaders se compilan en tiempo de ejecución, no hace falta `unsafe-eval`: Three.js no lo usa.
@@ -330,6 +334,4 @@ Reemplazar Calico por Cilium para tener flujos reales entre pods. Exige reconstr
 
 ## Pendiente de platicar
 
-- Cuánta información de la infraestructura mostrar públicamente: ¿núcleo genérico o nombres de componentes sin detalles?
-- Si los nodos del clúster aparecen como tres "soles" con sus workloads orbitando, o se omiten.
 - Paleta final, interacción en celular y la vista accesible de lista.

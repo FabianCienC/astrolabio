@@ -27,7 +27,8 @@ Kubernetes manifests do **not** live here. They go in `homelab-gitops` under `wo
 - **No DB, no Redis.** All state is the in-memory cache, and there is a single API replica.
 - **Endpoints:** `GET /api/galaxia` returns a full sanitized snapshot. `/ws` is a WebSocket that pushes watcher deltas (phase 3).
 - **Metadata sources:** custom annotations on the Namespace (`fabiancienfuegos.com/proyecto|descripcion|repo`) and on Deployments (`fabiancienfuegos.com/descripcion|rol|criticidad`). A namespace is drawn in detail only if it has the label `fabiancienfuegos.com/astrolabio: visible`. The commit comes from the image tag, which is the git SHA. Sync, health and revision come from `Application.status`. Don't add annotations for data that can be derived.
-- **Platform namespaces** (`kube-system`, `argocd`, `traefik`, `cloudflared`, `calico-system`) are collapsed into a generic "infrastructure" galactic core, without pod names.
+- **Platform namespaces** (`kube-system`, `argocd`, `traefik`, `cloudflared`, `calico-system`) form the "infrastructure" galactic core and **do** show their components, as a showcase of the infra. Only components in a closed **catalog inside the API** are published (name, purpose, backing workload); anything not in the catalog is dropped. Publish name, purpose, health, ready/desired replicas, Argo sync/health and (phase 3) CPU/RAM. Never publish pod names, IPs, ports, **versions or image tags** of platform components, args or config.
+- **Nodes** are three "suns" in the core, published only as "control plane", "worker 1", "worker 2" (no hostname or IP), with health, pod count and CPU/RAM. Workloads do not orbit them; constellations stay grouped by namespace.
 
 ## Security invariants (the site is public)
 

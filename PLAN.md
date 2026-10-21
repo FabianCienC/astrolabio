@@ -27,7 +27,7 @@ E0 ──► E1.1 contrato ──┬──► resto de E1 (API) ──┐
 - [ ] `homelab-gitops`: `platform/rbac/astrolabio-reader.yaml` + `apps/rbac.yaml`.
 - [ ] `homelab-gitops`: namespace `astrolabio` y kind `ServiceAccount` en el `AppProject portfolio`; `apps/astrolabio.yaml`.
 - [ ] Anotaciones `fabiancienfuegos.com/*` en los namespaces y deployments de `hola` y `cv`.
-- [ ] Decidir cuánta infraestructura se muestra (núcleo genérico o nombres) y si los nodos aparecen como "soles". Afecta el contrato de E1.
+- [x] Decidir cuánta infraestructura se muestra y si aparecen los nodos: **componentes con detalle desde un catálogo cerrado en la API, sin versiones; nodos como tres soles en el núcleo, sin órbitas** (ver Seguridad en `astrolabio.md`).
 
 **Listo cuando:** los tres `k auth can-i` dan lo esperado y Argo CD muestra `astrolabio` en `Synced`.
 
@@ -37,11 +37,12 @@ E0 ──► E1.1 contrato ──┬──► resto de E1 (API) ──┐
 2. [ ] **Tests de sanitización primero:** fallan si la respuesta contiene `env`, `volumes`, IPs de pods o nodos, el `repoURL` de `homelab-gitops` o mensajes de Events con rutas internas.
 3. [ ] **Informer genérico** list + watch con caché en memoria y re-list ante `410 Gone`, con su test.
 4. [ ] Un informer por recurso: Namespaces, Deployments, StatefulSets, Pods, Services, Events, `HTTPRoute`, `Application` (`argocd`).
-5. [ ] Ensamblado de la galaxia: anotaciones, commit desde el tag de imagen, sync/salud/revisión de Argo, plataforma colapsada en el núcleo y allowlist por etiqueta.
-6. [ ] Prueba local: `uvicorn` contra el clúster con kubeconfig por túnel SSH.
-7. [ ] Imagen: `python:3.13-slim`, UID 10001, dependencias con hash vía `uv sync --locked` (o `uv export --hashes`) en una etapa de build.
-8. [ ] CI (`.github/workflows/ci.yaml`): job por carpeta con `paths`, Trivy, push a ghcr y bump con `yq` en `homelab-gitops`. `dependabot.yml`.
-9. [ ] Manifiestos en `homelab-gitops/workloads/astrolabio/`: deployment, SA, service, `HTTPRoute` y NetworkPolicy de salida a `192.168.0.41:6443` + DNS.
+5. [ ] Ensamblado de la galaxia: anotaciones, commit desde el tag de imagen, sync/salud/revisión de Argo y allowlist por etiqueta.
+6. [ ] **Catálogo de infraestructura** (`api/.../catalogo.py`): componente → nombre, función y workload que lo respalda (CoreDNS, kube-proxy, API server, etcd, Calico, Traefik, Argo CD, cloudflared, Sealed Secrets…). Núcleo con sus componentes y los tres nodos (control plane, worker 1, worker 2). Test: nada fuera del catálogo aparece, y ningún componente de plataforma lleva versión ni tag.
+7. [ ] Prueba local: `uvicorn` contra el clúster con kubeconfig por túnel SSH.
+8. [ ] Imagen: `python:3.13-slim`, UID 10001, dependencias con hash vía `uv sync --locked` (o `uv export --hashes`) en una etapa de build.
+9. [ ] CI (`.github/workflows/ci.yaml`): job por carpeta con `paths`, Trivy, push a ghcr y bump con `yq` en `homelab-gitops`. `dependabot.yml`.
+10. [ ] Manifiestos en `homelab-gitops/workloads/astrolabio/`: deployment, SA, service, `HTTPRoute` y NetworkPolicy de salida a `192.168.0.41:6443` + DNS.
 
 **Listo cuando:** `curl https://astrolabio.fabiancienfuegos.com/api/galaxia` devuelve `hola`, `cv` y el núcleo, sin campos prohibidos.
 
@@ -53,7 +54,7 @@ Puede empezar en cuanto exista el contrato (E1.1).
 2. [ ] **Spike visual (punto de decisión):** fondo de partículas en capas con paralaje + una estrella con shader propio y `UnrealBloomPass`. Se itera hasta que **se sienta como mirar el espacio** antes de seguir.
 3. [ ] Estrellas: `Points` con shader, brillo que respira, color y animación según la salud (ok / degradado / caído).
 4. [ ] Constelaciones: líneas finas con material aditivo y una nebulosa con fbm por proyecto.
-5. [ ] Núcleo de infraestructura: disco de partículas con rotación lenta.
+5. [ ] Núcleo de infraestructura: disco de partículas con rotación lenta, componentes como estrellas con ficha y los tres nodos como soles.
 6. [ ] Interacción: `OrbitControls`, `Raycaster`, vuelo de cámara y ficha en React (qué es, rol, repo, commit con enlace y estado de Argo).
 7. [ ] Accesibilidad: vista de lista con el mismo contenido y `prefers-reduced-motion` (sin pulsos ni rotación).
 8. [ ] Rendimiento: medir fps; en dispositivos lentos, bajar automáticamente las partículas y el bloom. Probar en celular real.
