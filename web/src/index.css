@@ -846,10 +846,10 @@ code {
 .legend-star-busy {
   width: 6px;
   height: 6px;
-  background: #fff;
+  background: #fff0d8;
   box-shadow:
-    0 0 4px 2px var(--star),
-    0 0 12px 4px color-mix(in srgb, var(--star) 45%, transparent);
+    0 0 4px 2px var(--heat),
+    0 0 12px 4px color-mix(in srgb, var(--heat) 50%, transparent);
 }
 
 /* CPU on the scene's own scale: a full bar is a star at full glow. */

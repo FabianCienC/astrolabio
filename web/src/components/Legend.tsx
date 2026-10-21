@@ -71,7 +71,7 @@ export function Legend() {
           <span
             className="legend-glow"
             aria-hidden="true"
-            style={{ "--star": KIND.pod.color } as CSSProperties}
+            style={{ "--star": KIND.pod.color, "--heat": CPU_GLOW.heat } as CSSProperties}
           >
             <span className="legend-star legend-star-idle" />
             <span className="legend-star legend-star-busy" />

@@ -14,11 +14,11 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 const HOME_TARGET = new Vector3(0, 0, 0);
 /** Seen from above at an angle, like looking down at a galaxy disc. */
-const HOME_OFFSET = new Vector3(0, 88, 64);
+const HOME_OFFSET = new Vector3(0, 108, 78);  // frames the core and the project ring
 const MIN_DISTANCE = 4;
 const MAX_DISTANCE = 220;
 /** How far from the center the orbit target may be panned. */
-const PAN_LIMIT = 80;
+const PAN_LIMIT = 95;
 /** Wheel sensitivity: distance is multiplied by exp(deltaY * this). */
 const WHEEL_SPEED = 0.0012;
 /** Higher = the zoom catches up with its goal faster. */

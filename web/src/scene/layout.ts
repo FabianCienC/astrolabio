@@ -31,6 +31,9 @@ export type PlacedObject = {
   shape: number;
   /** 0..1 brightness from CPU (`cpuGlow`); undefined without metrics. Set by the scene. */
   glow?: number;
+  /** 0..1 flare when its CPU just rose, starting at `flareAt` (scene seconds). Set by the scene. */
+  flare?: number;
+  flareAt?: number;
 };
 
 export type Relation = [fromId: string, toId: string];
@@ -45,14 +48,19 @@ export const CORE_GROUP = "core";
 export const systemGroup = (system: string) => `core/${system}`;
 export const isCoreGroup = (group: string) => group === CORE_GROUP || group.startsWith("core/");
 
-const PROJECT_RING = 46;
+const PROJECT_RING = 56;
 const WORKLOAD_RADIUS = 4;
-const REPLICASET_OFFSET = 1.6;
-const POD_RADIUS = 0.75;
+const REPLICASET_OFFSET = 2.1;
+/** How far pods sit from their owner: wide enough that halos never merge them. */
+const POD_RADIUS = 1.1;
+const PLATFORM_POD_RADIUS = 1.6;
+/** How far a platform Service sits inside its component, toward the nodes. */
+const PLATFORM_SERVICE_INSET = 2.2;
+const PLATFORM_POD_SCALE = 0.7;
 const ENTRY_DISTANCE = 6.5;
 const ENTRY_SPACING = 1.8;
 const NODE_RADIUS = 2.2;
-const SYSTEM_RING = 16;
+const SYSTEM_RING = 26;
 /** Empty angle (radians) between platform system clusters on the core ring. */
 const SYSTEM_GAP_ANGLE = 0.35;
 
@@ -74,14 +82,17 @@ class Builder {
 
   add(id: string, kind: ObjectKind, group: string, position: Vector3) {
     const info = KIND[kind];
-    this.objects.push({ id, kind, group, position, size: info.size, shape: SHAPE[info.shape] });
+    // Platform pods are anonymous detail around their component: drawn smaller.
+    const size = kind === "pod" && isCoreGroup(group) ? info.size * PLATFORM_POD_SCALE : info.size;
+    this.objects.push({ id, kind, group, position, size, shape: SHAPE[info.shape] });
   }
 
   /** Pods evenly spaced on a small circle around their owner. */
   pods(pods: Pod[], owner: Vector3, group: string) {
     pods.forEach((pod, i) => {
       const angle = (i / pods.length) * Math.PI * 2 + 0.4;
-      this.add(pod.id, "pod", group, around(owner, POD_RADIUS, angle, 0.15));
+      const radius = isCoreGroup(group) ? PLATFORM_POD_RADIUS : POD_RADIUS;
+      this.add(pod.id, "pod", group, around(owner, radius, angle, 0.15));
     });
   }
 
@@ -165,7 +176,8 @@ export function layoutGalaxy(galaxy: Galaxy): Layout {
     const angle = start + sector / 2;
     start += sector + SYSTEM_GAP_ANGLE;
     const center = around(origin, SYSTEM_RING, angle);
-    const radius = components.length === 1 ? 0 : 1.4 + 0.45 * components.length;
+    // Roomy enough that each component, its pods and its services read apart.
+    const radius = components.length === 1 ? 0 : 3 + 1.1 * components.length;
     const group = systemGroup(system);
 
     components.forEach((component, i) => {
@@ -181,7 +193,7 @@ export function layoutGalaxy(galaxy: Galaxy): Layout {
         const offset = (n - (component.services.length - 1) / 2) * 0.7;
         const inside = position
           .clone()
-          .addScaledVector(towardNodes, 1.3)
+          .addScaledVector(towardNodes, PLATFORM_SERVICE_INSET)
           .addScaledVector(sideways, offset);
         build.add(service.id, "service", group, inside);
         for (const target of service.targets) build.relations.push([service.id, target]);

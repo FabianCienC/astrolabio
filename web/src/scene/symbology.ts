@@ -86,20 +86,49 @@ export function nebulaColor(isCore: boolean, hash: number): Color {
  * NEUTRAL_GLOW, a modest star.
  */
 export const CPU_GLOW = {
-  label: "Halo: uso de CPU (más CPU, estrella más grande y brillante)",
+  label: "Uso de CPU: más CPU, estrella más grande, brillante y cálida (naranja)",
   /** Millicores that count as full glow, per kind. */
-  reference: { pod: 100, workload: 200, component: 200, node: 1000 } as Partial<
+  reference: { pod: 100, workload: 200, component: 200, node: 3000 } as Partial<
     Record<ObjectKind, number>
   >,
+  /**
+   * How much of the halo each kind gets (1 = all of it). Nodes are already the biggest
+   * objects, and platform components (DaemonSets summed over three nodes) run hot: full
+   * halos would melt them into white blots that hide what is around them.
+   */
+  haloShare: { node: 0.25, component: 0.7, workload: 0.8 } as Partial<Record<ObjectKind, number>>,
+  /** A platform pod sits right by its component with the same CPU: a small share, so the
+   * component carries the light instead of two halos adding up. */
+  platformPodShare: 0.35,
+  /**
+   * Most the halo may add around the core, in CSS pixels. Like a real star, the glow keeps
+   * about the same size on screen at any distance: zooming in grows the object, not its glow.
+   */
+  haloMaxPx: 120,
+  /**
+   * Heat: with CPU the halo warms from the kind's color to amber and the core to a warm
+   * white, so busy objects stand out at a glance even with no motion at all.
+   */
+  heat: "#ffa53d",
+  warmWhite: "#fff0d8",
+  /**
+   * When an object's CPU rises between two samples it flares: brighter core, bigger halo,
+   * fading out in about two seconds. A rise below `minRise` (in glow) is noise.
+   */
+  flare: { minRise: 0.04, gain: 5, decay: 1.2 },
   /** Halo radius, as a multiple of the core radius, at zero and full glow. */
   haloMin: 0.5,
-  haloMax: 11,
+  haloMax: 9,
   /** Halo intensity at zero and full glow. */
   haloDim: 0.04,
-  haloBright: 1.5,
-  /** Core brightness at zero and full glow (the core also turns whiter). */
-  coreDim: 0.35,
-  coreBright: 1.9,
+  haloBright: 1.6,
+  /** Core brightness at zero and full glow. */
+  coreDim: 0.28,
+  coreBright: 1.6,
+  /** How far the core turns white at full glow (0 keeps its kind's color). */
+  whiten: 0.5,
+  /** Bright inner glow around the core, on top of the soft halo. */
+  innerGlow: 0.3,
 };
 
 /** 0..1 glow of an object from its CPU, or undefined when it has no metrics. */
@@ -114,5 +143,6 @@ export function cpuGlow(
   return Math.min(Math.log10(1 + cpuMillicores) / Math.log10(1 + reference), 1);
 }
 
-/** Glow of objects without metrics (Services, routes, or no metrics-server): a modest star. */
-export const NEUTRAL_GLOW = 0.35;
+/** Glow of objects without metrics (Services, routes, rings, or no metrics-server): a calm
+ * star, so only what actually works stands out. */
+export const NEUTRAL_GLOW = 0.1;

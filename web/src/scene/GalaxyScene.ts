@@ -21,7 +21,7 @@ import { Nebulae } from "./nebulae";
 import { MIN_SIZE_PX, ObjectPoints, SIZE_SCALE } from "./objects";
 import { detectQuality, forcedQuality, type Quality, QualityGovernor } from "./quality";
 import { RelationLines } from "./relations";
-import { BACKGROUND, KIND_COLORS, type ObjectKind } from "./symbology";
+import { BACKGROUND, CPU_GLOW, KIND_COLORS, type ObjectKind } from "./symbology";
 
 export type SceneOptions = {
   /** `prefers-reduced-motion`: no auto-rotation. Transitions stay smooth, just shorter. */
@@ -153,7 +153,22 @@ export class GalaxyScene {
   load(galaxy: Galaxy) {
     const layout = layoutGalaxy(galaxy);
     const glow = glowById(galaxy);
-    for (const o of layout.objects) o.glow = glow.get(o.id);
+    const { minRise, gain } = CPU_GLOW.flare;
+    const before = new Map(this.placed.map((o) => [o.id, o]));
+    for (const o of layout.objects) {
+      o.glow = glow.get(o.id);
+      const previous = before.get(o.id);
+      const rise = (o.glow ?? 0) - (previous?.glow ?? o.glow ?? 0);
+      if (rise > minRise) {
+        // CPU just went up: flare, so the change itself is seen, not just the new level.
+        o.flare = Math.min(rise * gain, 1);
+        o.flareAt = this.objects.time;
+      } else if (previous?.flare) {
+        // A flare still fading carries over to the next update.
+        o.flare = previous.flare;
+        o.flareAt = previous.flareAt;
+      }
+    }
     // During a morph these positions move every frame; the layout's own stay the targets.
     this.placed = layout.objects.map((o) => ({ ...o, position: o.position.clone() }));
     this.indexById = new Map(this.placed.map((o, i) => [o.id, i]));

@@ -9,12 +9,13 @@
 import {
   AdditiveBlending,
   BufferGeometry,
+  Color,
   Float32BufferAttribute,
   Points,
   ShaderMaterial,
 } from "three";
 
-import type { PlacedObject } from "./layout";
+import { isCoreGroup, type PlacedObject } from "./layout";
 import { CPU_GLOW, KIND_COLORS, NEUTRAL_GLOW } from "./symbology";
 
 /** Must match the 420.0 and 5.0 in the vertex shader: picking uses the same size. */
@@ -39,6 +40,17 @@ const vertexShader = /* glsl */ `
   // Seconds, and 1 unless reduced motion: busy stars breathe.
   uniform float uTime;
   uniform float uMotion;
+  // CPU_GLOW, as uniforms so the dev panel can tune them live.
+  uniform float uHaloMin;
+  uniform float uHaloMax;
+  uniform float uHaloDim;
+  uniform float uHaloBright;
+  uniform float uCoreDim;
+  uniform float uCoreBright;
+  uniform float uWhiten;
+  uniform vec3 uHeat;
+  uniform vec3 uWarmWhite;
+  uniform float uHaloMaxPx;
   // Index and 0..1 amount for the current and the fading-out previous highlight.
   uniform vec4 uSelected;  // (index, amount, previous index, previous amount)
   uniform vec4 uHovered;
@@ -52,6 +64,11 @@ const vertexShader = /* glsl */ `
   // 0..1 from CPU (see CPU_GLOW): an idle object is a small dim point, a busy one a
   // white-hot core with a wide halo.
   attribute float aGlow;
+  // Share of the CPU halo this kind gets (CPU_GLOW.haloShare): small for the big nodes.
+  attribute float aHaloShare;
+  // CPU just rose: 0..1 flare that started at aFlareAt (seconds of uTime) and fades out.
+  attribute float aFlare;
+  attribute float aFlareAt;
   attribute vec3 aColor;
   varying vec3 vCore;
   varying vec3 vHalo;
@@ -72,23 +89,29 @@ const vertexShader = /* glsl */ `
     float hovered = amount(uHovered) * (1.0 - selected);
     float g = aGlow;
     // Only clearly busy stars breathe, each at its own phase.
-    float breath = 1.0 + uMotion * 0.2 * smoothstep(0.55, 1.0, g) * sin(uTime * (1.4 + g) + aIndex * 1.7);
+    // Busy stars beat: faster and stronger with CPU, each at its own phase (never with
+    // reduced motion; heat below carries the same news without moving).
+    float breath = 1.0 + uMotion * 0.35 * smoothstep(0.2, 1.0, g) * sin(uTime * 6.2832 * (0.5 + 1.8 * g) + aIndex * 1.7);
+    float heat = smoothstep(0.08, 0.6, g);
 
     // Everything else dims while something is selected (hover lifts it back); the selected
     // object outshines it all, tinted toward white.
     float focus = mix(mix(1.0, ${DIMMED.toFixed(2)}, uFocus), 1.0, max(hovered, selected));
-    float core = mix(${CPU_GLOW.coreDim.toFixed(2)}, ${CPU_GLOW.coreBright.toFixed(2)}, g) * breath;
+    float flare = aFlare * exp(-max(uTime - aFlareAt, 0.0) * ${CPU_GLOW.flare.decay.toFixed(2)});
+    float core = mix(uCoreDim, uCoreBright, g) * breath * (1.0 + 1.5 * flare);
     float brightness = mix(${BASE_BRIGHTNESS.toFixed(2)} * core * focus, ${SELECTED_BRIGHTNESS.toFixed(2)} * max(core, 1.0), selected);
-    vCore = mix(aColor, vec3(1.0), 0.2 + 0.5 * g + 0.15 * selected) * brightness * aAppear;
-    float halo = mix(${CPU_GLOW.haloDim.toFixed(2)}, ${CPU_GLOW.haloBright.toFixed(2)}, g * g);
-    vHalo = aColor * halo * breath * focus * aAppear;
+    vCore = mix(aColor, mix(vec3(1.0), uWarmWhite, heat), uWhiten * g + 0.15 * selected) * brightness * aAppear;
+    float halo = mix(uHaloDim, uHaloBright, g) + 0.9 * flare;
+    vHalo = mix(aColor, uHeat, heat) * halo * aHaloShare * breath * focus * aAppear;
     vShape = aShape;
 
     // The core keeps the size picking uses; the halo extends the sprite around it.
     float size = uSize * aSize * (1.0 + ${SELECTED_GROWTH.toFixed(2)} * selected + ${HOVERED_GROWTH.toFixed(2)} * hovered);
     float corePx = max(size * uPixelRatio * (420.0 / -mvPosition.z), 5.0 * uPixelRatio);
-    float haloScale = mix(${CPU_GLOW.haloMin.toFixed(2)}, ${CPU_GLOW.haloMax.toFixed(2)}, g * g);
-    float spritePx = min(corePx * (1.0 + haloScale), max(uMaxPointSize, corePx));
+    float haloScale = (mix(uHaloMin, uHaloMax, g) + 4.0 * flare) * aHaloShare;
+    // The halo adds at most uHaloMaxPx (in CSS pixels) around the core, whatever the zoom.
+    float haloPx = min(corePx * haloScale, (uHaloMaxPx + 50.0 * flare) * uPixelRatio * aHaloShare);
+    float spritePx = min(corePx + haloPx, max(uMaxPointSize, corePx));
     gl_PointSize = spritePx * aAppear;
     vCoreFraction = corePx / spritePx;
     vPixels = gl_PointSize;
@@ -96,6 +119,7 @@ const vertexShader = /* glsl */ `
 `;
 
 const fragmentShader = /* glsl */ `
+  uniform float uInnerGlow;
   varying vec3 vCore;
   varying vec3 vHalo;
   varying float vShape;
@@ -135,13 +159,19 @@ const fragmentShader = /* glsl */ `
 
     // Halo: soft and wide, fading to nothing at the sprite's edge (0 center, 1 edge).
     float r = length(p) * 2.0;
-    float halo = pow(max(1.0 - r, 0.0), 2.0) + 0.8 * exp(-r * r * 40.0);
+    float halo = pow(max(1.0 - r, 0.0), 2.0) + uInnerGlow * exp(-r * r * 40.0);
 
     vec3 color = vCore * core + vHalo * halo;
     if (max(color.r, max(color.g, color.b)) < 0.002) discard;
     gl_FragColor = vec4(color, 1.0);
   }
 `;
+
+/** Share of the CPU halo an object gets (CPU_GLOW.haloShare; platform pods get less). */
+function haloShare(o: PlacedObject): number {
+  if (o.kind === "pod" && isCoreGroup(o.group)) return CPU_GLOW.platformPodShare;
+  return CPU_GLOW.haloShare[o.kind] ?? 1;
+}
 
 /**
  * One highlighted object that eases in, while the previous one eases out.
@@ -203,6 +233,17 @@ export class ObjectPoints {
         uMaxPointSize: { value: maxPointSize },
         uTime: { value: 0 },
         uMotion: { value: reducedMotion ? 0 : 1 },
+        uHaloMin: { value: CPU_GLOW.haloMin },
+        uHaloMax: { value: CPU_GLOW.haloMax },
+        uHaloDim: { value: CPU_GLOW.haloDim },
+        uHaloBright: { value: CPU_GLOW.haloBright },
+        uCoreDim: { value: CPU_GLOW.coreDim },
+        uCoreBright: { value: CPU_GLOW.coreBright },
+        uWhiten: { value: CPU_GLOW.whiten },
+        uInnerGlow: { value: CPU_GLOW.innerGlow },
+        uHaloMaxPx: { value: CPU_GLOW.haloMaxPx },
+        uHeat: { value: new Color(CPU_GLOW.heat) },
+        uWarmWhite: { value: new Color(CPU_GLOW.warmWhite) },
       },
       blending: AdditiveBlending,
       depthWrite: false,
@@ -214,7 +255,20 @@ export class ObjectPoints {
 
   /** Replaces every object. Cheap at this scale (a few hundred points at most), so a live
    * update can call it every frame while objects move. */
+  private last: (PlacedObject & { appear?: number })[] = [];
+
+  /** Seconds of the shader's clock, to start a CPU flare at. */
+  get time(): number {
+    return this.material.uniforms.uTime!.value as number;
+  }
+
+  /** Redraws the last objects (the dev panel calls it after changing a halo share). */
+  refresh() {
+    this.update(this.last);
+  }
+
   update(objects: (PlacedObject & { appear?: number })[]) {
+    this.last = objects;
     const attribute = (values: number[], size = 1) => new Float32BufferAttribute(values, size);
     const positions = objects.flatMap((o) => [o.position.x, o.position.y, o.position.z]);
     const colors = objects.flatMap((o) => KIND_COLORS[o.kind].toArray());
@@ -225,6 +279,12 @@ export class ObjectPoints {
     this.geometry.setAttribute("aIndex", attribute(objects.map((_, i) => i)));
     this.geometry.setAttribute("aAppear", attribute(objects.map((o) => o.appear ?? 1)));
     this.geometry.setAttribute("aGlow", attribute(objects.map((o) => o.glow ?? NEUTRAL_GLOW)));
+    this.geometry.setAttribute(
+      "aHaloShare",
+      attribute(objects.map(haloShare)),
+    );
+    this.geometry.setAttribute("aFlare", attribute(objects.map((o) => o.flare ?? 0)));
+    this.geometry.setAttribute("aFlareAt", attribute(objects.map((o) => o.flareAt ?? 0)));
   }
 
   /** Index into the last `update` list, or -1 for none. */
