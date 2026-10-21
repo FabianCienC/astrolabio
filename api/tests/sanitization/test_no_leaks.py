@@ -14,6 +14,7 @@ from fastapi.testclient import TestClient
 from poisoned_cluster import SECRETS, poisoned_cluster
 
 from astrolabio_api.config import Settings
+from astrolabio_api.kube.cluster import RESOURCES
 from astrolabio_api.main import create_app
 
 # Keys of raw Kubernetes objects, or of data the contract never carries.
@@ -85,3 +86,8 @@ def test_assembled_galaxy_has_no_leaks():
     assert [r.hostnames for r in cv.routes] == [["cv.fabiancienfuegos.com"]]
     assert cv.workloads[0].criticality is None  # unknown annotation value
     assert {c.id for c in galaxy.core.components} == {"coredns", "kube-apiserver", "calico-node"}
+
+
+def test_poisoned_cluster_has_every_watched_resource():
+    # The keys are the contract between kube/ and assembly/.
+    assert set(poisoned_cluster()) == {r.key for r in RESOURCES}

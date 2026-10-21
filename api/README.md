@@ -32,8 +32,10 @@ Kubernetes API ──► kube/ ──► assembly/ ──► contract/ ──►
 | `contract/export.py` | `export-contract` CLI: writes JSON Schema + example to `../contract/`. | done |
 | `routes/` | Thin HTTP layer, one module per endpoint group. GET only. | done |
 | `routes/galaxy.py` | `GET /api/galaxy`. Serves the example until `assembly/` exists. | done |
-| `kube/` | Informers: one `list` + `watch` per resource, in-memory cache, re-list on `410 Gone`. Caches raw API JSON as dicts. | E1.3–E1.4 |
+| `kube/` | Informers: one `list` + `watch` per resource, in-memory cache, re-list on `410 Gone`. Caches raw API JSON as dicts. | done |
 | `kube/informer.py` | Generic informer over a `Source` (list + watch, raises `Gone` on 410); backoff on errors. Tested with a fake source. | done |
+| `kube/source.py` | `Source` over kubernetes_asyncio: raw JSON (`_preload_content=False`), lines split by hand, 410 (status or `ERROR` event) → `Gone`, drops `managedFields` and `last-applied-configuration`. | done |
+| `kube/cluster.py` | `RESOURCES` (one informer each, matching the `astrolabio-reader` ClusterRole), config in-cluster or kubeconfig, `snapshot()` for `assembly/`. | done |
 | `assembly/` | Turns the cache into a `Galaxy`: annotations, commit from the image tag, Argo status, visible namespaces, infra catalog. | E1.5–E1.6 |
 | `routes/ws.py` | `/ws`: pushes deltas from the informers. | phase 3 |
 

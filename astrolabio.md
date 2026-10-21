@@ -83,7 +83,7 @@ Lo que **no** existe todavía y hay que agregar: `metrics-server`, Prometheus y 
 
 ## Cómo identifica cada cosa
 
-1. **API de Kubernetes con watch** (sin polling). Para cada tipo de recurso, la API hace `list` una vez, guarda el resultado en memoria y luego mantiene un `watch` abierto que aplica cada cambio. Es el mismo patrón *list + watch* que usan los controladores de Kubernetes, también llamado *informer*. Recursos vigilados: Namespaces, Deployments, StatefulSets, Pods, Services, Events, `HTTPRoute` y `Application` de Argo CD.
+1. **API de Kubernetes con watch** (sin polling). Para cada tipo de recurso, la API hace `list` una vez, guarda el resultado en memoria y luego mantiene un `watch` abierto que aplica cada cambio. Es el mismo patrón *list + watch* que usan los controladores de Kubernetes, también llamado *informer*. Recursos vigilados: Nodes, Namespaces, Deployments, ReplicaSets, StatefulSets, DaemonSets, Pods, Services, Events, `HTTPRoute` y `Application` de Argo CD.
    - Si el watch responde **`410 Gone`** (la versión que pedía ya expiró), se vuelve a hacer `list` y se reanuda. Es el error más común al escribir watchers a mano.
 2. **Anotaciones propias**, en dos niveles:
 

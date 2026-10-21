@@ -52,7 +52,7 @@ Kubernetes manifests do **not** live here. They go in `homelab-gitops` under `wo
 
 ## API architecture (the part that spans many files)
 
-- **Informer pattern:** for each resource the API does one `list`, caches the result in memory, then keeps a `watch` open from that resourceVersion. On **`410 Gone`** it re-lists and resumes. Watched resources: Namespaces, Deployments, ReplicaSets, StatefulSets, DaemonSets, Pods, Services, Events, `HTTPRoute`, and Argo CD `Application` (in `argocd`).
+- **Informer pattern:** for each resource the API does one `list`, caches the result in memory, then keeps a `watch` open from that resourceVersion. On **`410 Gone`** it re-lists and resumes. Watched resources (`kube/cluster.py`): Nodes, Namespaces, Deployments, ReplicaSets, StatefulSets, DaemonSets, Pods, Services, Events, `HTTPRoute`, and Argo CD `Application` (in `argocd`).
 - **No DB, no Redis.** All state is the in-memory cache, and there is a single API replica.
 - **Endpoints:** `GET /api/galaxy` returns a full sanitized snapshot. `/ws` is a WebSocket that pushes watcher deltas (phase 3).
 - **Metadata sources:** custom annotations on the Namespace (`fabiancienfuegos.com/proyecto|descripcion|repo`) and on Deployments (`fabiancienfuegos.com/descripcion|rol|criticidad`). A namespace is drawn in detail only if it has the label `fabiancienfuegos.com/astrolabio: visible`. The commit comes from the image tag, which is the git SHA. Sync and health come from `Application.status` (not `revision`: it is a commit of the private GitOps repo). Don't add annotations for data that can be derived.
