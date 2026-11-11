@@ -6,7 +6,7 @@
 
 FROM ghcr.io/astral-sh/uv:0.11.22@sha256:16b63af0e7342dd372da9ca989ea9fa542fc68f4640972d59a8450a5240fe42e AS uv
 
-FROM python:3.13-slim@sha256:cf50a4f6ac4f026458b08d5222023d700ac806410dff5e9ca8728fa44f2b850f AS build
+FROM python:3.15-slim@sha256:65a65fc7b30b06cb6df4930fd4650697cb23f4c2698ab81fc87e4b031bc36928 AS build
 COPY --from=uv /uv /usr/local/bin/uv
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
@@ -20,7 +20,7 @@ COPY src ./src
 # Bytecode is compiled here: at runtime the root filesystem is read-only.
 RUN python -m compileall -q src
 
-FROM python:3.13-slim@sha256:cf50a4f6ac4f026458b08d5222023d700ac806410dff5e9ca8728fa44f2b850f
+FROM python:3.15-slim@sha256:65a65fc7b30b06cb6df4930fd4650697cb23f4c2698ab81fc87e4b031bc36928
 # pip is not needed at runtime, and its vendored copies of certifi, urllib3, msgpack and
 # setuptools lag behind (Trivy flags them), so it goes.
 RUN groupadd --system --gid 10001 astrolabio \
